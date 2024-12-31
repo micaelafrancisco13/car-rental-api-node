@@ -5,11 +5,10 @@
   "scripts": {
     "start": "nodemon --watch ./ --legacy-watch index.js",
     "migrate": "npx prisma generate && npx prisma migrate dev",
-    "dev": "npm run migrate && npm run start"
+    "dev": "npm run start"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
-    "config": "^3.3.12",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "debug": "~2.6.9",

@@ -11,6 +11,8 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
 
   db:
     image: postgres:17

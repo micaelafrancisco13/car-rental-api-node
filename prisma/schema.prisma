@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Change to your DB provider if needed
+  url      = env("DATABASE_URL") // Update with your database URL
+}
+
+model User {
+  id            String         @id @default(uuid())
+  firstName     String
+  lastName      String
+  email         String         @unique
+  password      String
+  role          Role
+  phoneNumber   String
+  bookings      Booking[] // One-to-many relationship
+  notifications Notification[]
+  createdBy     String?
+  modifiedBy    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Vehicle {
+  id                 String             @id @default(uuid())
+  make               String
+  model              String
+  year               Int
+  licensePlate       String             @unique
+  availabilityStatus AvailabilityStatus
+  dailyRate          Decimal
+  imageUrl           String?
+  bookings           Booking[] // One-to-many relationship
+  fleetTracking      FleetTracking?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Booking {
+  id         String        @id @default(uuid())
+  userId     String
+  vehicleId  String
+  startDate  DateTime
+  endDate    DateTime
+  status     BookingStatus
+  totalPrice Decimal
+  user       User          @relation(fields: [userId], references: [id])
+  vehicle    Vehicle       @relation(fields: [vehicleId], references: [id])
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([vehicleId, startDate, endDate]) // Optional: for query optimization
+}
+
+model Notification {
+  id      String           @id @default(uuid())
+  userId  String
+  message String
+  type    NotificationType
+  sentAt  DateTime
+  user    User             @relation(fields: [userId], references: [id])
+}
+
+model FleetTracking {
+  id              String   @id @default(uuid())
+  vehicleId       String   @unique
+  currentLocation String
+  lastUpdatedAt   DateTime
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+}
+
+// Enums
+enum Role {
+  CUSTOMER
+  EMPLOYEE
+  ADMIN
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BOOKED
+  MAINTENANCE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum NotificationType {
+  CONFIRMATION
+  REMINDER
+  STATUS_UPDATE
+}

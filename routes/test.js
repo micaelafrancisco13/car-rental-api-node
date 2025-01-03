@@ -4,8 +4,8 @@ const router = express.Router()
 router.get("/", async (req, res) => {
 	// Send back a response indicating success
 	res.send({
-		success: true,
-		status: "Endpoint tested successfully.",
+		status: true,
+		message: "Endpoint tested successfully.",
 	})
 })
 

@@ -5,7 +5,7 @@ services:
     ports:
       - "${SERVER_PORT}:3000"
     env_file:
-      - .env.local
+      - .env
     depends_on:
       - db
     volumes:

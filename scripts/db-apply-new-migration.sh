@@ -20,7 +20,7 @@ echo "Running Prisma migration with name: $MIGRATION_NAME..."
 docker-compose exec app npx prisma migrate dev --name "$MIGRATION_NAME"
 
 # Optionally restart the app container
-# echo "Restarting app container..."
-# docker-compose restart app
+ echo "Restarting app container..."
+ docker-compose restart app
 
 echo "Done!"

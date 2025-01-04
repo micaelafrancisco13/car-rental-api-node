@@ -1,15 +1,15 @@
 const joi = require("joi")
 const jwt = require("jsonwebtoken")
 
-function generateAuthToken() {
+function generateAuthToken(user) {
 	return jwt.sign(
 		{
-			id: this.id,
-			firstName: this.firstName,
-			lastName: this.lastName,
-			email: this.email,
-			phoneNumber: this.phoneNumber,
-			role: this.role,
+			id: user.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			email: user.email,
+			phoneNumber: user.phoneNumber,
+			role: user.role,
 		},
 		process.env.JWT_PRIVATE_KEY,
 	)
@@ -34,7 +34,7 @@ function getJoiSchema() {
 				"string.pattern.base":
 					"Phone number must be a valid Philippine number (e.g., 09123456789 or +639123456789)",
 			}),
-		password: joi.string().min(8).max(1024).required().label("Password"),
+		password: joi.string().min(8).max(50).required().label("Password"),
 		role: joi.string().valid("CUSTOMER", "EMPLOYEE", "IT_ADMIN").required().label("Role"),
 		// booker: joi.when("role", {
 		// 	is: "CUSTOMER",
@@ -57,5 +57,5 @@ function validateUser(user) {
 	return getJoiSchema().validate(user)
 }
 
-exports.validate = validateUser
-exports.generateAuthToken = generateAuthToken
+exports.validateUser = validateUser
+exports.generateUserAuthToken = generateAuthToken

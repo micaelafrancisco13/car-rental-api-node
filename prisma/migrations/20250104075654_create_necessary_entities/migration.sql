@@ -14,121 +14,134 @@ CREATE TYPE "TripStatus" AS ENUM ('IDLE', 'ON_THE_WAY', 'PICKED_UP', 'DROPPED_OF
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'FAILED');
 
 -- CreateTable
-CREATE TABLE "User" (
-    "id" TEXT NOT NULL,
-    "firstName" TEXT NOT NULL,
-    "lastName" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "phoneNumber" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
-    "role" "Role" NOT NULL DEFAULT 'CUSTOMER',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+CREATE TABLE "User"
+(
+    "id"          TEXT         NOT NULL,
+    "firstName"   TEXT         NOT NULL,
+    "lastName"    TEXT         NOT NULL,
+    "email"       TEXT         NOT NULL,
+    "phoneNumber" TEXT         NOT NULL,
+    "password"    TEXT         NOT NULL,
+    "role"        "Role"       NOT NULL DEFAULT 'CUSTOMER',
+    "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"   TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Booker" (
-    "id" TEXT NOT NULL,
+CREATE TABLE "Booker"
+(
+    "id"     TEXT NOT NULL,
     "userId" TEXT NOT NULL,
 
     CONSTRAINT "Booker_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Driver" (
-    "id" TEXT NOT NULL,
+CREATE TABLE "Driver"
+(
+    "id"     TEXT NOT NULL,
     "userId" TEXT NOT NULL,
 
     CONSTRAINT "Driver_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Vehicle" (
-    "id" TEXT NOT NULL,
-    "driverId" TEXT,
-    "make" TEXT NOT NULL,
-    "model" TEXT NOT NULL,
-    "year" INTEGER NOT NULL,
-    "licensePlate" TEXT NOT NULL,
-    "dailyRate" DECIMAL(65,30) NOT NULL,
+CREATE TABLE "Vehicle"
+(
+    "id"                 TEXT                 NOT NULL,
+    "driverId"           TEXT,
+    "make"               TEXT                 NOT NULL,
+    "model"              TEXT                 NOT NULL,
+    "year"               INTEGER              NOT NULL,
+    "licensePlate"       TEXT                 NOT NULL,
+    "dailyRate"          DECIMAL(65, 30)      NOT NULL,
     "availabilityStatus" "AvailabilityStatus" NOT NULL DEFAULT 'AVAILABLE',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt"          TIMESTAMP(3)         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"          TIMESTAMP(3)         NOT NULL,
 
     CONSTRAINT "Vehicle_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Booking" (
-    "id" TEXT NOT NULL,
-    "bookerId" TEXT NOT NULL,
-    "driverId" TEXT,
-    "vehicleId" TEXT,
-    "startLocation" TEXT NOT NULL,
-    "endLocation" TEXT NOT NULL,
-    "totalPrice" DECIMAL(65,30) NOT NULL,
-    "status" "BookingStatus" NOT NULL DEFAULT 'PENDING',
+CREATE TABLE "Booking"
+(
+    "id"            TEXT            NOT NULL,
+    "bookerId"      TEXT            NOT NULL,
+    "driverId"      TEXT,
+    "vehicleId"     TEXT,
+    "startLocation" TEXT            NOT NULL,
+    "endLocation"   TEXT            NOT NULL,
+    "totalPrice"    DECIMAL(65, 30) NOT NULL,
+    "status"        "BookingStatus" NOT NULL DEFAULT 'PENDING',
     "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt"     TIMESTAMP(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"     TIMESTAMP(3)    NOT NULL,
 
     CONSTRAINT "Booking_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "FleetTracking" (
-    "id" TEXT NOT NULL,
-    "bookingId" TEXT NOT NULL,
-    "driverLatitude" DOUBLE PRECISION,
+CREATE TABLE "FleetTracking"
+(
+    "id"              TEXT         NOT NULL,
+    "bookingId"       TEXT         NOT NULL,
+    "driverLatitude"  DOUBLE PRECISION,
     "driverLongitude" DOUBLE PRECISION,
-    "bookerLatitude" DOUBLE PRECISION,
+    "bookerLatitude"  DOUBLE PRECISION,
     "bookerLongitude" DOUBLE PRECISION,
-    "tripStatus" "TripStatus" NOT NULL DEFAULT 'IDLE',
-    "lastUpdatedAt" TIMESTAMP(3) NOT NULL,
+    "tripStatus"      "TripStatus" NOT NULL DEFAULT 'IDLE',
+    "lastUpdatedAt"   TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "FleetTracking_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "User_email_key" ON "User" ("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Booker_userId_key" ON "Booker"("userId");
+CREATE UNIQUE INDEX "Booker_userId_key" ON "Booker" ("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Driver_userId_key" ON "Driver"("userId");
+CREATE UNIQUE INDEX "Driver_userId_key" ON "Driver" ("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Vehicle_driverId_key" ON "Vehicle"("driverId");
+CREATE UNIQUE INDEX "Vehicle_driverId_key" ON "Vehicle" ("driverId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Vehicle_licensePlate_key" ON "Vehicle"("licensePlate");
+CREATE UNIQUE INDEX "Vehicle_licensePlate_key" ON "Vehicle" ("licensePlate");
 
 -- CreateIndex
-CREATE INDEX "Vehicle_availabilityStatus_idx" ON "Vehicle"("availabilityStatus");
+CREATE INDEX "Vehicle_availabilityStatus_idx" ON "Vehicle" ("availabilityStatus");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "FleetTracking_bookingId_key" ON "FleetTracking"("bookingId");
+CREATE UNIQUE INDEX "FleetTracking_bookingId_key" ON "FleetTracking" ("bookingId");
 
 -- AddForeignKey
-ALTER TABLE "Booker" ADD CONSTRAINT "Booker_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Booker"
+    ADD CONSTRAINT "Booker_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Driver" ADD CONSTRAINT "Driver_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Driver"
+    ADD CONSTRAINT "Driver_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Vehicle" ADD CONSTRAINT "Vehicle_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "Driver"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Vehicle"
+    ADD CONSTRAINT "Vehicle_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "Driver" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Booking" ADD CONSTRAINT "Booking_bookerId_fkey" FOREIGN KEY ("bookerId") REFERENCES "Booker"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Booking"
+    ADD CONSTRAINT "Booking_bookerId_fkey" FOREIGN KEY ("bookerId") REFERENCES "Booker" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Booking" ADD CONSTRAINT "Booking_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "Driver"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Booking"
+    ADD CONSTRAINT "Booking_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "Driver" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Booking" ADD CONSTRAINT "Booking_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Booking"
+    ADD CONSTRAINT "Booking_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FleetTracking" ADD CONSTRAINT "FleetTracking_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "FleetTracking"
+    ADD CONSTRAINT "FleetTracking_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking" ("id") ON DELETE CASCADE ON UPDATE CASCADE;

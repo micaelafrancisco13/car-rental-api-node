@@ -10,10 +10,7 @@ class SocketEventHandler {
 			console.log("send-data event received:", data)
 
 			// Emit data back to clients
-			this.io.emit(
-				"receive-data",
-				`Hello socket client! This is what you sent me: ${data}`,
-			)
+			this.io.emit("receive-data", `Hello socket client! This is what you sent me: ${data}`)
 		})
 	}
 }

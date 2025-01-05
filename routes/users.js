@@ -28,18 +28,13 @@ router.post("/", async (req, res) => {
 	let user = await prisma.user.findUnique({
 		where: { email: req.body.email },
 	})
-	if (user)
-		return res
-			.status(400)
-			.send(`The email ${req.body.email} is already used`)
+	if (user) return res.status(400).send(`The email ${req.body.email} is already used`)
 
 	user = await prisma.user.findUnique({
 		where: { phoneNumber: req.body.phoneNumber },
 	})
 	if (user)
-		return res
-			.status(400)
-			.send(`The phone number ${req.body.phoneNumber} is already used`)
+		return res.status(400).send(`The phone number ${req.body.phoneNumber} is already used`)
 
 	const { firstName, lastName, email, phoneNumber, password, role } = req.body
 	const hashedPassword = await hashPassword(password)

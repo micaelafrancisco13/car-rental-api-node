@@ -40,18 +40,22 @@ model User {
 // }
 
 model Vehicle {
-  id                 String             @id @default(uuid())
+  id                  String             @id @default(uuid())
   // driverId           String?            @unique
   // driver             Driver?            @relation(fields: [driverId], references: [id])
-  make               String
-  model              String
-  year               Int
-  licensePlate       String             @unique
-  dailyRate          Decimal
-  availabilityStatus AvailabilityStatus @default(AVAILABLE)
-  bookings           Booking[]
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  make                String
+  model               String
+  year                Int
+  licensePlate        String             @unique
+  briefDescription    String? // Changed from description to briefDescription
+  detailedDescription String?
+  features            String[]
+  images              String[]
+  dailyRate           Decimal
+  availabilityStatus  AvailabilityStatus @default(AVAILABLE)
+  bookings            Booking[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   @@index([availabilityStatus])
 }

@@ -17,15 +17,15 @@ function generateAuthToken(user) {
 
 function getJoiSchema() {
 	return joi.object({
-		firstName: joi.string().min(2).max(255).required().label("First name"),
-		lastName: joi.string().min(2).max(255).required().label("Last name"),
+		firstName: joi.string().min(2).max(255).required().label("First Name"),
+		lastName: joi.string().min(2).max(255).required().label("Last Lame"),
 		email: joi
 			.string()
 			.email({ tlds: { allow: true } })
 			.min(2)
 			.max(255)
 			.required()
-			.label("Email address"),
+			.label("Email Address"),
 		phoneNumber: joi
 			.string()
 			.regex(/^(09|\+639)\d{9}$/)
@@ -35,11 +35,7 @@ function getJoiSchema() {
 					"Phone number must be a valid Philippine number (e.g., 09123456789 or +639123456789)",
 			}),
 		password: joi.string().min(8).max(50).required().label("Password"),
-		role: joi
-			.string()
-			.valid("BOOKER", "EMPLOYEE", "ADMIN")
-			.required()
-			.label("Role"),
+		role: joi.string().valid("BOOKER", "EMPLOYEE", "ADMIN").required().label("Role"),
 	})
 }
 

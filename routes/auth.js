@@ -1,10 +1,7 @@
 const express = require("express")
 const { PrismaClient } = require("@prisma/client")
 const { compare } = require("bcrypt")
-const {
-	generateUserAuthToken,
-	validateLoginCredentials,
-} = require("../models/user")
+const { generateUserAuthToken, validateLoginCredentials } = require("../models/user")
 const prisma = new PrismaClient()
 const router = express.Router()
 

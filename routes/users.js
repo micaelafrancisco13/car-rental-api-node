@@ -4,16 +4,17 @@ const { genSalt, hash } = require("bcrypt")
 const { validateUser, generateUserAuthToken } = require("../models/user")
 const _ = require("lodash")
 const auth = require("../filter-chains/auth")
+const authorizeRoles = require("../filter-chains/authorizeRoles")
 const prisma = new PrismaClient()
 const router = express.Router()
 
-router.get("/", auth, async (req, res) => {
+router.get("/", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res) => {
 	const users = await prisma.user.findMany()
 
 	res.send(_.map(users, (user) => _.omit(user, "password")))
 })
 
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
 	const { id } = req.params
 	const user = await prisma.user.findUnique({ where: { id } })
 

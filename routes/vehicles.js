@@ -1,14 +1,12 @@
 const express = require("express")
 const { PrismaClient } = require("@prisma/client")
-const { validateVehicle } = require("../models/vehicle")
-const _ = require("lodash")
+const { validateVehicle, validateModifiedVehicle } = require("../models/vehicle")
 const auth = require("../filter-chains/auth")
-const admin = require("../filter-chains/admin")
-const employee = require("../filter-chains/employee")
+const authorizeRoles = require("../filter-chains/authorizeRoles")
 const prisma = new PrismaClient()
 const router = express.Router()
 
-router.get("/", auth, async (req, res) => {
+router.get("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
 	const whereClause = {}
 	for (const key in req.query) {
 		if (key === "orderBy") continue // Skip orderBy for now
@@ -19,14 +17,17 @@ router.get("/", auth, async (req, res) => {
 	const orderByClause = req.query.orderBy ? { availabilityStatus: req.query.orderBy } : {}
 
 	const vehicles = await prisma.vehicle.findMany({
-		where: whereClause,
+		where: {
+			...whereClause,
+			availabilityStatus: whereClause?.availabilityStatus?.toUpperCase(),
+		},
 		orderBy: orderByClause,
 	})
 
 	res.send(vehicles)
 })
 
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
 	const { id } = req.params
 	const vehicle = await prisma.vehicle.findUnique({ where: { id } })
 
@@ -34,47 +35,77 @@ router.get("/:id", auth, async (req, res) => {
 	return res.send(vehicle)
 })
 
-router.post("/", [auth, employee, admin], async (req, res) => {
-	try {
-		// 1. Validate the array of vehicles
-		const vehicles = req.body
-		if (!Array.isArray(vehicles))
-			return res.status(400).send("Invalid input: Expected an array of vehicles.")
+router.post("/", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res) => {
+	const vehicles = req.body
+	if (!Array.isArray(vehicles))
+		return res.status(400).send("Invalid input: Expected an array of vehicles.")
 
-		const createdVehicles = []
-
-		// 2. Start a transaction
-		await prisma.$transaction(async (prisma) => {
-			for (let i = 0; i < vehicles.length; i++) {
-				const vehicle = vehicles[i]
-				const { error } = validateVehicle(vehicle)
-				if (error)
-					throw new Error(`${error.details[0].message} for the vehicle at index ${i}`) // Throw error to trigger rollback
-
-				let existingVehicle = await prisma.vehicle.findUnique({
-					where: { licensePlate: vehicle.licensePlate },
-				})
-				if (existingVehicle)
-					throw new Error(
-						`The vehicle with the license plate ${vehicle.licensePlate} is already added`,
-					)
-
-				const newVehicle = await prisma.vehicle.create({
-					data: { ...vehicle },
-				})
-				createdVehicles.push(newVehicle)
-			}
-		})
-
-		res.status(201).send(createdVehicles)
-	} catch (exception) {
-		const errorMessage = `Failed to add vehicles: ${exception.message}`
-
-		res.status(500).send(errorMessage)
+	for (let i = 0; i < vehicles.length; ++i) {
+		const { error } = validateVehicle(vehicles[i])
+		if (error)
+			return res.status(400).send(`${error.details[0].message} for the vehicle at index ${i}`)
 	}
+
+	const createdVehicles = []
+
+	await prisma.$transaction(async (prisma) => {
+		for (let i = 0; i < vehicles.length; ++i) {
+			const vehicle = vehicles[i]
+
+			let existingVehicle = await prisma.vehicle.findUnique({
+				where: { licensePlate: vehicle.licensePlate },
+			})
+			if (existingVehicle)
+				throw new Error(
+					`The vehicle with the license plate ${vehicle.licensePlate} is already added`,
+				)
+
+			const newVehicle = await prisma.vehicle.create({
+				data: { ...vehicle },
+			})
+			createdVehicles.push(newVehicle)
+		}
+	})
+
+	res.status(201).send(createdVehicles)
 })
 
-router.delete("/", [auth, employee, admin], async (req, res) => {
+router.post("/update", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res) => {
+	const data = req.body
+	if (!Array.isArray(data))
+		return res.status(400).send("Invalid input: Expected an array of vehicles.")
+
+	for (let i = 0; i < data.length; ++i) {
+		const { error } = validateModifiedVehicle(data[i])
+		if (error)
+			return res.status(400).send(`${error.details[0].message} for the vehicle at index ${i}`)
+	}
+
+	for (let i = 0; i < data.length; ++i) {
+		let existingVehicle = await prisma.vehicle.findUnique({
+			where: { id: data[i].id },
+		})
+		if (!existingVehicle) return res.status(400).send(`Vehicle at index ${i} not found`)
+	}
+
+	const updatedVehicles = []
+
+	await prisma.$transaction(async (prisma) => {
+		for (let i = 0; i < data.length; ++i) {
+			const { id, vehicle } = data[i]
+
+			const updatedVehicle = await prisma.vehicle.update({
+				where: { id },
+				data: { ...vehicle },
+			})
+			updatedVehicles.push(updatedVehicle)
+		}
+	})
+
+	res.send(updatedVehicles)
+})
+
+router.delete("/", [auth, authorizeRoles(["ADMIN"])], async (req, res) => {
 	const whereClause = {}
 	for (const key in req.query) {
 		if (key === "orderBy") continue // Skip orderBy for now

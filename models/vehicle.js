@@ -30,4 +30,14 @@ function validateVehicle(vehicle) {
 	return getJoiSchema().validate(vehicle)
 }
 
+function validateModifiedVehicle(data) {
+	return joi
+		.object({
+			id: joi.string().uuid().required().label("Vehicle ID"),
+			vehicle: getJoiSchema().required().label("Vehicle"),
+		})
+		.validate(data)
+}
+
 exports.validateVehicle = validateVehicle
+exports.validateModifiedVehicle = validateModifiedVehicle

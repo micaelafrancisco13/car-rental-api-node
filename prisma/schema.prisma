@@ -1,85 +1,95 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // Change to your DB provider if needed
-  url      = env("DATABASE_URL") // Update with your database URL
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String         @id @default(uuid())
-  firstName     String
-  lastName      String
-  email         String         @unique
-  password      String
-  role          Role
-  phoneNumber   String
-  bookings      Booking[] // One-to-many relationship
-  notifications Notification[]
-  createdBy     String?
-  modifiedBy    String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id          String    @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String    @unique
+  phoneNumber String    @unique
+  password    String
+  role        Role      @default(BOOKER)
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relationships
+  // booker Booker?
+  // driver Driver?
 }
+
+// model Booker {
+//   id       String    @id @default(uuid())
+//   userId   String    @unique
+//   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   bookings Booking[]
+// }
+
+// model Driver {
+//   id       String    @id @default(uuid())
+//   userId   String    @unique
+//   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   vehicle  Vehicle?
+//   bookings Booking[]
+// }
 
 model Vehicle {
   id                 String             @id @default(uuid())
+  // driverId           String?            @unique
+  // driver             Driver?            @relation(fields: [driverId], references: [id])
   make               String
   model              String
   year               Int
   licensePlate       String             @unique
-  availabilityStatus AvailabilityStatus
   dailyRate          Decimal
-  imageUrl           String?
-  bookings           Booking[] // One-to-many relationship
-  fleetTracking      FleetTracking?
+  availabilityStatus AvailabilityStatus @default(AVAILABLE)
+  bookings           Booking[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+
+  @@index([availabilityStatus])
 }
 
 model Booking {
-  id         String        @id @default(uuid())
-  userId     String
-  vehicleId  String
-  startDate  DateTime
-  endDate    DateTime
-  status     BookingStatus
-  totalPrice Decimal
-  user       User          @relation(fields: [userId], references: [id])
-  vehicle    Vehicle       @relation(fields: [vehicleId], references: [id])
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-
-  @@index([vehicleId, startDate, endDate]) // Optional: for query optimization
-}
-
-model Notification {
-  id      String           @id @default(uuid())
-  userId  String
-  message String
-  type    NotificationType
-  sentAt  DateTime
-  user    User             @relation(fields: [userId], references: [id])
+  id            String         @id @default(uuid())
+  bookerId      String
+  booker        User           @relation(fields: [bookerId], references: [id])
+  // driverId      String?
+  // driver        Driver?        @relation(fields: [driverId], references: [id])
+  vehicleId     String?
+  vehicle       Vehicle?       @relation(fields: [vehicleId], references: [id])
+  startLocation String
+  endLocation   String
+  totalPrice    Decimal
+  status        BookingStatus  @default(PENDING)
+  paymentStatus PaymentStatus  @default(PENDING)
+  deliveryType  DeliveryType   @default(PICKUP) // New field for delivery type
+  fleetTracking FleetTracking?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model FleetTracking {
-  id              String   @id @default(uuid())
-  vehicleId       String   @unique
-  currentLocation String
-  lastUpdatedAt   DateTime
-  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  id              String     @id @default(uuid())
+  bookingId       String     @unique
+  booking         Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  // driverLatitude  Float?
+  // driverLongitude Float?
+  bookerLatitude  Float?
+  bookerLongitude Float?
+  tripStatus      TripStatus @default(IDLE)
+  lastUpdatedAt   DateTime   @updatedAt
 }
 
 // Enums
 enum Role {
-  CUSTOMER
+  BOOKER
   EMPLOYEE
   ADMIN
 }
@@ -92,12 +102,26 @@ enum AvailabilityStatus {
 
 enum BookingStatus {
   PENDING
-  CONFIRMED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
   CANCELLED
 }
 
-enum NotificationType {
-  CONFIRMATION
-  REMINDER
-  STATUS_UPDATE
+enum TripStatus {
+  IDLE
+  ON_THE_WAY
+  PICKED_UP
+  DROPPED_OFF
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum DeliveryType {
+  PICKUP
+  DROPOFF
 }

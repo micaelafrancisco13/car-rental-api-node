@@ -1,5 +1,7 @@
 import globals from "globals"
 import pluginJs from "@eslint/js"
+import pluginNode from "eslint-plugin-node"
+import prettier from "eslint-plugin-prettier"
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
@@ -8,8 +10,15 @@ export default [
 		languageOptions: {
 			sourceType: "commonjs",
 			globals: {
-				...globals.node, // Add Node.js globals like `process`
+				...globals.node,
 			},
+		},
+		plugins: {
+			node: pluginNode,
+			prettier,
+		},
+		rules: {
+			"prettier/prettier": "error",
 		},
 	},
 	pluginJs.configs.recommended,

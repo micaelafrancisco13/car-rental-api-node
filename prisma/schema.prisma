@@ -69,6 +69,7 @@ model Booking {
   totalPrice    Decimal
   status        BookingStatus  @default(PENDING)
   paymentStatus PaymentStatus  @default(PENDING)
+  deliveryType  DeliveryType   @default(PICKUP) // New field for delivery type
   fleetTracking FleetTracking?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -78,8 +79,8 @@ model FleetTracking {
   id              String     @id @default(uuid())
   bookingId       String     @unique
   booking         Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  driverLatitude  Float?
-  driverLongitude Float?
+  // driverLatitude  Float?
+  // driverLongitude Float?
   bookerLatitude  Float?
   bookerLongitude Float?
   tripStatus      TripStatus @default(IDLE)
@@ -118,4 +119,9 @@ enum PaymentStatus {
   PENDING
   PAID
   FAILED
+}
+
+enum DeliveryType {
+  PICKUP
+  DROPOFF
 }

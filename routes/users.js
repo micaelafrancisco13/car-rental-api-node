@@ -27,6 +27,9 @@ router.post("/", async (req, res) => {
 	let user = await prisma.user.findUnique({ where: { email: req.body.email } })
 	if (user) return res.status(400).send(`The email ${req.body.email} is already used`)
 
+	user = await prisma.user.findUnique({ where: { phoneNumber: req.body.phoneNumber } })
+	if (user) return res.status(400).send(`The phone number ${req.body.phoneNumber} is already used`)
+
 	const { firstName, lastName, email, phoneNumber, password, role } = req.body
 	const hashedPassword = await hashPassword(password)
 	const newUser = await prisma.user.create({
@@ -39,14 +42,10 @@ router.post("/", async (req, res) => {
 			role,
 		},
 	})
-	if (newUser.role === "EMPLOYEE" || newUser.role === "IT_ADMIN") {
-		res.status(201)
-			.header("Authorization", `Bearer ${generateUserAuthToken(newUser)}`)
-			.header("access-control-expose-headers", "Authorization")
-			.send(_.omit(newUser, ["password"]))
-	} else if (newUser.role === "CUSTOMER") {
-		res.status(201).send(_.omit(newUser, ["password"]))
-	}
+	res.status(201)
+		.header("Authorization", `Bearer ${generateUserAuthToken(newUser)}`)
+		.header("access-control-expose-headers", "Authorization")
+		.send(_.omit(newUser, ["password"]))
 })
 
 async function hashPassword(password) {

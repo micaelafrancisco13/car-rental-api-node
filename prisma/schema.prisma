@@ -8,40 +8,41 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   firstName   String
   lastName    String
-  email       String   @unique
-  phoneNumber String
+  email       String    @unique
+  phoneNumber String    @unique
   password    String
-  role        Role     @default(CUSTOMER)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  role        Role      @default(BOOKER)
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relationships
-  booker Booker?
-  driver Driver?
+  // booker Booker?
+  // driver Driver?
 }
 
-model Booker {
-  id       String    @id @default(uuid())
-  userId   String    @unique
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings Booking[]
-}
+// model Booker {
+//   id       String    @id @default(uuid())
+//   userId   String    @unique
+//   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   bookings Booking[]
+// }
 
-model Driver {
-  id       String    @id @default(uuid())
-  userId   String    @unique
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicle  Vehicle?
-  bookings Booking[]
-}
+// model Driver {
+//   id       String    @id @default(uuid())
+//   userId   String    @unique
+//   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   vehicle  Vehicle?
+//   bookings Booking[]
+// }
 
 model Vehicle {
   id                 String             @id @default(uuid())
-  driverId           String?            @unique
-  driver             Driver?            @relation(fields: [driverId], references: [id])
+  // driverId           String?            @unique
+  // driver             Driver?            @relation(fields: [driverId], references: [id])
   make               String
   model              String
   year               Int
@@ -58,9 +59,9 @@ model Vehicle {
 model Booking {
   id            String         @id @default(uuid())
   bookerId      String
-  booker        Booker         @relation(fields: [bookerId], references: [id])
-  driverId      String?
-  driver        Driver?        @relation(fields: [driverId], references: [id])
+  booker        User           @relation(fields: [bookerId], references: [id])
+  // driverId      String?
+  // driver        Driver?        @relation(fields: [driverId], references: [id])
   vehicleId     String?
   vehicle       Vehicle?       @relation(fields: [vehicleId], references: [id])
   startLocation String
@@ -87,9 +88,9 @@ model FleetTracking {
 
 // Enums
 enum Role {
-  CUSTOMER
+  BOOKER
   EMPLOYEE
-  IT_ADMIN
+  ADMIN
 }
 
 enum AvailabilityStatus {

@@ -35,21 +35,7 @@ function getJoiSchema() {
 					"Phone number must be a valid Philippine number (e.g., 09123456789 or +639123456789)",
 			}),
 		password: joi.string().min(8).max(50).required().label("Password"),
-		role: joi.string().valid("CUSTOMER", "EMPLOYEE", "IT_ADMIN").required().label("Role"),
-		// booker: joi.when("role", {
-		// 	is: "CUSTOMER",
-		// 	then: joi.object({
-		// 		userId: joi.string().uuid().required(), // Assuming userId is required for Booker
-		// 	}),
-		// 	otherwise: joi.forbidden(),
-		// }),
-		// driver: joi.when("role", {
-		// 	is: "CUSTOMER",
-		// 	then: joi.object({
-		// 		// Driver details if the role is CUSTOMER
-		// 	}),
-		// 	otherwise: joi.forbidden(),
-		// }),
+		role: joi.string().valid("BOOKER", "EMPLOYEE", "ADMIN").required().label("Role"),
 	})
 }
 

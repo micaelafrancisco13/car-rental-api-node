@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "nodemon --watch ./ --legacy-watch index.js",
-    "migrate": "npx prisma generate && npx prisma migrate dev",
+    "migrate": "npx prisma generate && npx prisma migrate deploy",
     "dev": "npm run migrate && npm run start"
   },
   "dependencies": {

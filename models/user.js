@@ -35,7 +35,11 @@ function getJoiSchema() {
 					"Phone number must be a valid Philippine number (e.g., 09123456789 or +639123456789)",
 			}),
 		password: joi.string().min(8).max(50).required().label("Password"),
-		role: joi.string().valid("BOOKER", "EMPLOYEE", "ADMIN").required().label("Role"),
+		role: joi
+			.string()
+			.valid("BOOKER", "EMPLOYEE", "ADMIN")
+			.required()
+			.label("Role"),
 	})
 }
 

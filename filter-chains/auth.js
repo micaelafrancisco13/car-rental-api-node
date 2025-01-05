@@ -4,7 +4,8 @@ module.exports = function (req, res, next) {
 	if (process.env.REQUIRES_AUTH !== "true") return next()
 
 	let token = req.header("Authorization")
-	if (!token || !token.startsWith("Bearer ")) return res.status(401).send("Access denied. No token provided.")
+	if (!token || !token.startsWith("Bearer "))
+		return res.status(401).send("Access denied. No token provided.")
 
 	token = token.substring(7)
 

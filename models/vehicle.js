@@ -39,5 +39,18 @@ function validateModifiedVehicle(data) {
 		.validate(data)
 }
 
+function validateAvailabilityStatus(availabilityStatus) {
+	return joi
+		.object({
+			availabilityStatus: joi
+				.string()
+				.valid("AVAILABLE", "BOOKED", "MAINTENANCE")
+				.required()
+				.label("Availability Status"),
+		})
+		.validate(availabilityStatus)
+}
+
 exports.validateVehicle = validateVehicle
 exports.validateModifiedVehicle = validateModifiedVehicle
+exports.validateAvailabilityStatus = validateAvailabilityStatus

@@ -1,6 +1,10 @@
 const express = require("express")
 const { PrismaClient } = require("@prisma/client")
-const { validateVehicle, validateModifiedVehicle } = require("../models/vehicle")
+const {
+	validateVehicle,
+	validateModifiedVehicle,
+	validateAvailabilityStatus,
+} = require("../models/vehicle")
 const auth = require("../filter-chains/auth")
 const authorizeRoles = require("../filter-chains/authorizeRoles")
 const prisma = new PrismaClient()
@@ -104,6 +108,27 @@ router.post("/update", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req
 
 	res.send(updatedVehicles)
 })
+
+router.patch(
+	"/:id/availability",
+	[auth, authorizeRoles(["EMPLOYEE", "ADMIN"])],
+	async (req, res) => {
+		const { id } = req.params
+
+		const { error } = validateAvailabilityStatus(req.body)
+		if (error) return res.status(400).send(error.details[0].message)
+
+		const vehicle = await prisma.vehicle.findUnique({ where: { id } })
+		if (!vehicle) return res.status(404).send("Vehicle not found")
+
+		const updatedVehicle = await prisma.vehicle.update({
+			where: { id },
+			data: { availabilityStatus: req.body.availabilityStatus.toUpperCase() },
+		})
+
+		res.send(updatedVehicle)
+	},
+)
 
 router.delete("/", [auth, authorizeRoles(["ADMIN"])], async (req, res) => {
 	const whereClause = {}

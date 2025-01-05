@@ -43,5 +43,15 @@ function validateUser(user) {
 	return getJoiSchema().validate(user)
 }
 
+function validateLoginCredentials(credentials) {
+	const schema = joi.object({
+		email: joi.string().email().required().label("Email"),
+		password: joi.string().required().label("Password"),
+	})
+
+	return schema.validate(credentials)
+}
+
 exports.validateUser = validateUser
+exports.validateLoginCredentials = validateLoginCredentials
 exports.generateUserAuthToken = generateAuthToken

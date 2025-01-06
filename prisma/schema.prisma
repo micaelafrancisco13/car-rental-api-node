@@ -13,6 +13,8 @@ model User {
   lastName    String
   email       String    @unique
   phoneNumber String    @unique
+  latitude    Float
+  longitude   Float
   password    String
   role        Role      @default(BOOKER)
   bookings    Booking[]
@@ -70,10 +72,12 @@ model Booking {
   vehicle       Vehicle?       @relation(fields: [vehicleId], references: [id])
   startLocation String
   endLocation   String
+  startDate     DateTime       @default(now())
+  endDate       DateTime       @updatedAt
   totalPrice    Decimal
   status        BookingStatus  @default(PENDING)
   paymentStatus PaymentStatus  @default(PENDING)
-  deliveryType  DeliveryType   @default(PICKUP) // New field for delivery type
+  deliveryType  DeliveryType   @default(DROPOFF)
   fleetTracking FleetTracking?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

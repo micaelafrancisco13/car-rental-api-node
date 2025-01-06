@@ -34,6 +34,8 @@ function getJoiSchema() {
 				"string.pattern.base":
 					"Phone number must be a valid Philippine number (e.g., 09123456789 or +639123456789)",
 			}),
+		latitude: joi.number().min(-90).max(90).required().label("Latitude"),
+		longitude: joi.number().min(-180).max(180).required().label("Longitude"),
 		password: joi.string().min(8).max(50).required().label("Password"),
 		role: joi.string().valid("BOOKER", "EMPLOYEE", "ADMIN").required().label("Role"),
 	})

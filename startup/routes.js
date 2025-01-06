@@ -3,6 +3,7 @@ const auth = require("../routes/auth")
 const test = require("../routes/test")
 const users = require("../routes/users")
 const vehicles = require("../routes/vehicles")
+const bookings = require("../routes/bookings")
 
 module.exports = function (app) {
 	app.use(express.json())
@@ -10,4 +11,5 @@ module.exports = function (app) {
 	app.use("/api/test", test)
 	app.use("/api/users", users)
 	app.use("/api/vehicles", vehicles)
+	app.use("/api/bookings", bookings)
 }

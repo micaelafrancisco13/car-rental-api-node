@@ -37,16 +37,11 @@ router.post("/", async (req, res) => {
 	if (user)
 		return res.status(400).send(`The phone number ${req.body.phoneNumber} is already used`)
 
-	const { firstName, lastName, email, phoneNumber, password, role } = req.body
-	const hashedPassword = await hashPassword(password)
+	const hashedPassword = await hashPassword(req.body.password)
 	const newUser = await prisma.user.create({
 		data: {
-			firstName,
-			lastName,
-			email,
-			phoneNumber,
+			...req.body,
 			password: hashedPassword,
-			role,
 		},
 	})
 	res.status(201)

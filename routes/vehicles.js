@@ -92,33 +92,31 @@ router.post("/", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res)
 })
 
 router.post("/update", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res) => {
+	const data = req.body
+	if (!Array.isArray(data))
+		return res.status(400).send("Invalid input: Expected an array of vehicles.")
+
+	// Validate each vehicle's fields
+	for (let i = 0; i < data.length; ++i) {
+		const vehicle = data[i]
+		const { error } = validateModifiedVehicle(vehicle)
+		if (error)
+			return res.status(400).send(`${error.details[0].message} for the vehicle at index ${i}`)
+	}
+
+	// Validate license plates in the input array
+	const licensePlateSet = new Set()
+	for (let i = 0; i < data.length; ++i) {
+		const { licensePlate } = data[i].vehicle
+		if (licensePlateSet.has(licensePlate))
+			return res
+				.status(400)
+				.send(`Duplicate license plate detected: ${licensePlate} at index ${i}`)
+
+		licensePlateSet.add(licensePlate)
+	}
+
 	try {
-		const data = req.body
-		if (!Array.isArray(data))
-			return res.status(400).send("Invalid input: Expected an array of vehicles.")
-
-		// Validate each vehicle's fields
-		for (let i = 0; i < data.length; ++i) {
-			const vehicle = data[i]
-			const { error } = validateModifiedVehicle(vehicle)
-			if (error)
-				return res
-					.status(400)
-					.send(`${error.details[0].message} for the vehicle at index ${i}`)
-		}
-
-		// Validate license plates in the input array
-		const licensePlateSet = new Set()
-		for (let i = 0; i < data.length; ++i) {
-			const { licensePlate } = data[i].vehicle
-			if (licensePlateSet.has(licensePlate))
-				return res
-					.status(400)
-					.send(`Duplicate license plate detected: ${licensePlate} at index ${i}`)
-
-			licensePlateSet.add(licensePlate)
-		}
-
 		const updatedVehicles = []
 
 		await prisma.$transaction(async (prisma) => {
@@ -152,7 +150,7 @@ router.post("/update", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req
 
 		res.send(updatedVehicles)
 	} catch (exception) {
-		res.status(400).send(exception.message)
+		res.status(exception).send(exception.message)
 	}
 })
 

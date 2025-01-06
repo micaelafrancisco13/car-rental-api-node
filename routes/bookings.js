@@ -30,47 +30,49 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 		dateRangesSet.add(dateRange)
 	}
 
-	const createdBookings = []
+	try {
+		const createdBookings = []
+		await prisma.$transaction(async (prisma) => {
+			for (let i = 0; i < bookings.length; ++i) {
+				const { vehicleId, startLocation, endLocation, startDate, endDate } = bookings[i]
 
-	await prisma.$transaction(async (prisma) => {
-		for (let i = 0; i < bookings.length; ++i) {
-			const { vehicleId, startLocation, endLocation, startDate, endDate } = bookings[i]
+				const existingVehicle = await prisma.vehicle.findUnique({
+					where: { id: vehicleId },
+				})
+				if (!existingVehicle) throw new Error(`Vehicle at index ${i} not found`)
 
-			const existingVehicle = await prisma.vehicle.findUnique({
-				where: { id: vehicleId },
-			})
-			if (!existingVehicle) throw new Error(`Vehicle at index ${i} not found`)
+				if (existingVehicle.availabilityStatus !== "AVAILABLE")
+					throw new Error(`Vehicle at index ${i} not available`)
 
-			if (existingVehicle.availabilityStatus !== "AVAILABLE")
-				throw new Error(`Vehicle at index ${i} not available`)
-
-			const bookingService = new BookingService(
-				existingVehicle.dailyRate,
-				startDate,
-				endDate,
-				req.user.latitude,
-				req.user.longitude,
-			)
-
-			bookingService.calculateTotalPrice()
-
-			const newBooking = await prisma.booking.create({
-				data: {
-					booker: { connect: { id: req.user.id } }, // Assuming you have auth middleware
-					vehicle: { connect: { id: vehicleId } },
-					startLocation,
-					endLocation,
+				const bookingService = new BookingService(
+					existingVehicle.dailyRate,
 					startDate,
 					endDate,
-					totalPrice: bookingService.calculateTotalPrice(),
-					deliveryType: bookingService.getDeliveryType(),
-				},
-			})
-			createdBookings.push(newBooking)
-		}
-	})
+					req.user.latitude,
+					req.user.longitude,
+				)
+				await bookingService.checkVehicleAvailability(vehicleId, i)
 
-	res.status(201).send(createdBookings)
+				const newBooking = await prisma.booking.create({
+					data: {
+						booker: { connect: { id: req.user.id } },
+						vehicle: { connect: { id: vehicleId } },
+						startLocation,
+						endLocation,
+						startDate,
+						endDate,
+						totalPrice: bookingService.calculateTotalPrice(),
+						status: new Date(startDate) > new Date() ? "PENDING" : "IN_PROGRESS",
+						deliveryType: bookingService.getDeliveryType(),
+					},
+				})
+				createdBookings.push(newBooking)
+			}
+		})
+		res.status(201).send(createdBookings)
+	} catch (exception) {
+		res.status(400).send(exception.message)
+	}
 })
 
 router.delete("/", [auth, authorizeRoles(["BOOKER", "ADMIN"])], async (req, res) => {

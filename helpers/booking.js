@@ -1,3 +1,5 @@
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
 const { parseISO, differenceInDays } = require("date-fns")
 const { isPointWithinRadius } = require("geolib")
 
@@ -64,6 +66,33 @@ class BookingService {
 		const basePrice = this.dailyRate * rentalDays
 		const dropoffFee = this.deliveryType === "DROPOFF" ? this.dropoffFee : 0
 		return basePrice + dropoffFee + this.platformFee
+	}
+
+	async checkVehicleAvailability(vehicleId, index) {
+		const existingBookings = await prisma.booking.findMany({
+			where: {
+				vehicleId: vehicleId,
+				status: { in: ["PENDING", "ACCEPTED", "IN_PROGRESS"] }, // Only consider active bookings
+				OR: [
+					{
+						startDate: { lte: this.endDate },
+						endDate: { gte: this.startDate },
+					},
+					{
+						startDate: { lte: this.startDate },
+						endDate: { gte: this.endDate },
+					},
+				],
+			},
+		})
+
+		if (existingBookings?.length > 0) {
+			throw new Error(
+				`The vehicle at index ${index} is already booked for the selected dates`,
+			)
+		}
+
+		return true
 	}
 }
 

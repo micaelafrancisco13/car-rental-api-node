@@ -1,4 +1,4 @@
-const { initSocket } = require("../socket")
+const { initSocket } = require("../services/socket")
 
 module.exports = function (server) {
 	initSocket(server)

@@ -1,15 +1,14 @@
-const { PrismaClient } = require("@prisma/client")
-const prisma = new PrismaClient()
 const { parseISO, differenceInDays } = require("date-fns")
 const { isPointWithinRadius } = require("geolib")
 
-// Constants for fees and configurations
 const {
 	DROPOFF_FEE,
 	PLATFORM_FEE,
 	ANGELES_CITY_CENTER,
 	DELIVERY_RADIUS_METERS,
 } = require("./constants")
+const { format } = require("morgan")
+const { prismaClient } = require("../startup/database")
 
 class BookingService {
 	dailyRate
@@ -23,7 +22,6 @@ class BookingService {
 	deliveryRadius = DELIVERY_RADIUS_METERS
 	deliveryType
 
-	// Constructor to initialize booking details
 	constructor(dailyRate, startDate, endDate, latitude, longitude) {
 		this.dailyRate = dailyRate
 		this.startDate = startDate
@@ -33,14 +31,38 @@ class BookingService {
 		this.deliveryType = this.#determineDeliveryType()
 	}
 
-	// Private method to calculate the difference in days between two UTC dates
+	static async updateBookingStatus() {
+		console.log("Updating booking status...")
+		try {
+			const today = format(new Date(), "yyyy-MM-dd")
+
+			const bookingsToUpdate = await prismaClient.booking.findMany({
+				where: {
+					status: { in: ["PENDING", "ACCEPTED"] },
+					startDate: today,
+				},
+			})
+
+			for (const booking of bookingsToUpdate) {
+				await prismaClient.booking.update({
+					where: { id: booking.id },
+					data: { status: "IN_PROGRESS" },
+				})
+			}
+
+			console.log(`Successfully updated ${bookingsToUpdate.length} bookings to IN_PROGRESS.`)
+		} catch (error) {
+			console.error("Error updating booking statuses:", error)
+		} finally {
+			await prismaClient.$disconnect()
+		}
+	}
+
 	#getUtcDateDifferenceInDays() {
 		return differenceInDays(parseISO(this.startDate), parseISO(this.endDate))
 	}
 
-	// Private method to check if coordinates are within Angeles City
 	#isWithinAngeles() {
-		// Convert coordinates to numbers before using them in isPointWithinRadius
 		const userLatitude = parseFloat(this.latitude)
 		const userLongitude = parseFloat(this.longitude)
 
@@ -51,7 +73,6 @@ class BookingService {
 		)
 	}
 
-	// Public method to determine the delivery type based on location
 	#determineDeliveryType() {
 		return this.#isWithinAngeles() ? "DROPOFF" : "PICKUP"
 	}
@@ -60,7 +81,6 @@ class BookingService {
 		return this.deliveryType
 	}
 
-	// Public method to calculate the total price of a booking
 	calculateTotalPrice() {
 		const rentalDays = this.#getUtcDateDifferenceInDays()
 		const basePrice = this.dailyRate * rentalDays
@@ -69,10 +89,10 @@ class BookingService {
 	}
 
 	async checkVehicleAvailability(vehicleId, index) {
-		const existingBookings = await prisma.booking.findMany({
+		const existingBookings = await prismaClient.booking.findMany({
 			where: {
 				vehicleId: vehicleId,
-				status: { in: ["PENDING", "ACCEPTED", "IN_PROGRESS"] }, // Only consider active bookings
+				status: { in: ["PENDING", "ACCEPTED", "IN_PROGRESS"] },
 				OR: [
 					{
 						startDate: { lte: this.endDate },

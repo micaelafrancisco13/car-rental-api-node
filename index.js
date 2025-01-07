@@ -8,3 +8,4 @@ const port = process.env.SERVER_PORT
 const server = app.listen(port, () => console.log(`Listening on port ${port}...`))
 
 require("./startup/socket")(server)
+require("./startup/cron-jobs")()

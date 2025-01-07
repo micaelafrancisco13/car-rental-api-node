@@ -1,5 +1,4 @@
 const express = require("express")
-const { PrismaClient } = require("@prisma/client")
 const {
 	validateVehicle,
 	validateModifiedVehicle,
@@ -7,7 +6,7 @@ const {
 } = require("../models/vehicle")
 const auth = require("../filter-chains/auth")
 const authorizeRoles = require("../filter-chains/authorizeRoles")
-const prisma = new PrismaClient()
+const { prismaClient } = require("../startup/database")
 const router = express.Router()
 
 router.get("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
@@ -20,7 +19,7 @@ router.get("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (
 
 	const orderByClause = req.query.orderBy ? { availabilityStatus: req.query.orderBy } : {}
 
-	const vehicles = await prisma.vehicle.findMany({
+	const vehicles = await prismaClient.vehicle.findMany({
 		where: {
 			...whereClause,
 			availabilityStatus: whereClause?.availabilityStatus?.toUpperCase(),
@@ -33,7 +32,7 @@ router.get("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (
 
 router.get("/:id", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
 	const { id } = req.params
-	const vehicle = await prisma.vehicle.findUnique({ where: { id } })
+	const vehicle = await prismaClient.vehicle.findUnique({ where: { id } })
 
 	if (!vehicle) return res.status(404).send("Vehicle not found")
 	return res.send(vehicle)
@@ -67,9 +66,9 @@ router.post("/", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res)
 	const createdVehicles = []
 	try {
 		// Validate license plates against the database and create vehicles
-		await prisma.$transaction(async (prisma) => {
+		await prismaClient.$transaction(async (prismaClient) => {
 			for (const vehicle of vehicles) {
-				const existingVehicle = await prisma.vehicle.findUnique({
+				const existingVehicle = await prismaClient.vehicle.findUnique({
 					where: { licensePlate: vehicle.licensePlate },
 				})
 				if (existingVehicle) {
@@ -78,7 +77,7 @@ router.post("/", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res)
 					)
 				}
 
-				const newVehicle = await prisma.vehicle.create({
+				const newVehicle = await prismaClient.vehicle.create({
 					data: { ...vehicle },
 				})
 				createdVehicles.push(newVehicle)
@@ -119,16 +118,16 @@ router.post("/update", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req
 	try {
 		const updatedVehicles = []
 
-		await prisma.$transaction(async (prisma) => {
+		await prismaClient.$transaction(async (prismaClient) => {
 			for (let i = 0; i < data.length; ++i) {
 				const { id, vehicle } = data[i]
 
-				const existingVehicle = await prisma.vehicle.findUnique({
+				const existingVehicle = await prismaClient.vehicle.findUnique({
 					where: { id },
 				})
 				if (!existingVehicle) throw new Error(`Vehicle at index ${i} not found`)
 
-				const duplicateVehicle = await prisma.vehicle.findFirst({
+				const duplicateVehicle = await prismaClient.vehicle.findFirst({
 					where: {
 						licensePlate: vehicle.licensePlate,
 						id: { not: id },
@@ -140,7 +139,7 @@ router.post("/update", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req
 						`Duplicate license plate detected: ${vehicle.licensePlate} already exists (attempted update at index ${i})`,
 					)
 
-				const updatedVehicle = await prisma.vehicle.update({
+				const updatedVehicle = await prismaClient.vehicle.update({
 					where: { id },
 					data: { ...vehicle },
 				})
@@ -163,10 +162,10 @@ router.patch(
 		const { error } = validateAvailabilityStatus(req.body)
 		if (error) return res.status(400).send(error.details[0].message)
 
-		const vehicle = await prisma.vehicle.findUnique({ where: { id } })
+		const vehicle = await prismaClient.vehicle.findUnique({ where: { id } })
 		if (!vehicle) return res.status(404).send("Vehicle not found")
 
-		const updatedVehicle = await prisma.vehicle.update({
+		const updatedVehicle = await prismaClient.vehicle.update({
 			where: { id },
 			data: { availabilityStatus: req.body.availabilityStatus.toUpperCase() },
 		})
@@ -183,7 +182,7 @@ router.delete("/", [auth, authorizeRoles(["ADMIN"])], async (req, res) => {
 		else whereClause[key] = req.query[key]
 	}
 
-	const deletedVehicles = await prisma.vehicle.deleteMany({
+	const deletedVehicles = await prismaClient.vehicle.deleteMany({
 		where: whereClause,
 	})
 

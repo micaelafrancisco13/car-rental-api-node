@@ -1,10 +1,9 @@
 const auth = require("../filter-chains/auth")
 const express = require("express")
-const { PrismaClient } = require("@prisma/client")
 const authorizeRoles = require("../filter-chains/authorizeRoles")
 const { validateBooking } = require("../models/Booking")
 const BookingService = require("../helpers/booking")
-const prisma = new PrismaClient()
+const { prismaClient } = require("../startup/database")
 const router = express.Router()
 
 router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
@@ -32,11 +31,11 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 
 	try {
 		const createdBookings = []
-		await prisma.$transaction(async (prisma) => {
+		await prismaClient.$transaction(async (prismaClient) => {
 			for (let i = 0; i < bookings.length; ++i) {
 				const { vehicleId, startLocation, endLocation, startDate, endDate } = bookings[i]
 
-				const existingVehicle = await prisma.vehicle.findUnique({
+				const existingVehicle = await prismaClient.vehicle.findUnique({
 					where: { id: vehicleId },
 				})
 				if (!existingVehicle) throw new Error(`Vehicle at index ${i} not found`)
@@ -53,7 +52,7 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 				)
 				await bookingService.checkVehicleAvailability(vehicleId, i)
 
-				const newBooking = await prisma.booking.create({
+				const newBooking = await prismaClient.booking.create({
 					data: {
 						booker: { connect: { id: req.user.id } },
 						vehicle: { connect: { id: vehicleId } },
@@ -76,7 +75,7 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 })
 
 router.delete("/", [auth, authorizeRoles(["BOOKER", "ADMIN"])], async (req, res) => {
-	const deletedBookings = await prisma.booking.deleteMany({})
+	const deletedBookings = await prismaClient.booking.deleteMany({})
 
 	res.send(`Deleted ${deletedBookings.count} bookings`)
 })

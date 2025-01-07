@@ -1,13 +1,12 @@
-const { TimezoneService } = require("../helpers/timezone")
 const { scheduleCronJob } = require("../services/schedule-cron-job")
 const { updateBookingStatus } = require("../helpers/booking")
+const { BOOKING_STATUS_CHANGE_TIME } = require("../helpers/constants")
+const { CronJobService } = require("../helpers/cron-job")
 
 module.exports = function () {
-	const { hour, minute } = TimezoneService.getUtcTime()
-
-	const cronExpression = `${minute} ${hour} * * *`
-	scheduleCronJob(cronExpression, updateBookingStatus, "Test cron job")
-	// Add more cron jobs here using the scheduleCronJob function
-	// Example:
-	// scheduleCronJob("*/5 * * * *", someOtherTask); // Run someOtherTask every 5 minutes
+	scheduleCronJob(
+		CronJobService.getCronExpression(BOOKING_STATUS_CHANGE_TIME),
+		updateBookingStatus,
+		"Test cron job",
+	)
 }

@@ -7,7 +7,6 @@ const {
 	ANGELES_CITY_CENTER,
 	DELIVERY_RADIUS_METERS,
 } = require("./constants")
-const { format } = require("morgan")
 const { prismaClient } = require("../startup/database")
 
 class BookingService {
@@ -32,14 +31,13 @@ class BookingService {
 	}
 
 	static async updateBookingStatus() {
-		console.log("Updating booking status...")
+		const currentUtcDate = new Date().toISOString() // Converts to ISO format (UTC)
+		console.log("Updating booking status...", currentUtcDate)
 		try {
-			const today = format(new Date(), "yyyy-MM-dd")
-
 			const bookingsToUpdate = await prismaClient.booking.findMany({
 				where: {
 					status: { in: ["PENDING", "ACCEPTED"] },
-					startDate: today,
+					startDate: currentUtcDate,
 				},
 			})
 

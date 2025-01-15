@@ -57,7 +57,7 @@ class BookingService {
 	}
 
 	#getUtcDateDifferenceInDays() {
-		return differenceInDays(parseISO(this.startDate), parseISO(this.endDate))
+		return differenceInDays(parseISO(this.endDate), parseISO(this.startDate))
 	}
 
 	#isWithinAngeles() {
@@ -81,6 +81,7 @@ class BookingService {
 
 	calculateTotalPrice() {
 		const rentalDays = this.#getUtcDateDifferenceInDays()
+		console.log("RENTAL DAYS", rentalDays)
 		const basePrice = this.dailyRate * rentalDays
 		const dropoffFee = this.deliveryType === "DROPOFF" ? this.dropoffFee : 0
 		return basePrice + dropoffFee + this.platformFee

@@ -4,7 +4,38 @@ const authorizeRoles = require("../filter-chains/authorizeRoles")
 const { validateBooking } = require("../models/Booking")
 const BookingService = require("../helpers/booking")
 const { prismaClient } = require("../startup/database")
+const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")
 const router = express.Router()
+
+const buildBookingFilter = (query) => {
+	const filter = {}
+	if (query.bookerId) filter.bookerId = query.bookerId
+	if (query.vehicleId) filter.vehicleId = query.vehicleId
+	if (query.status) filter.status = query.status
+	if (query.paymentStatus) filter.paymentStatus = query.paymentStatus
+	if (query.deliveryType) filter.deliveryType = query.deliveryType
+	if (query.startDate && query.endDate) {
+		filter.startDate = { gte: new Date(query.startDate) }
+		filter.endDate = { lte: new Date(query.endDate) }
+	}
+	return filter
+}
+
+router.get("/", async (req, res) => {
+	const filter = buildBookingFilter(req.query)
+
+	const bookings = await prismaClient.booking.findMany({
+		where: filter,
+		orderBy: { [req.query.sortBy || DEFAULT_SORT_BY]: req.query.order || DEFAULT_ORDER },
+		// include: {
+		// 	booker: true,
+		// 	vehicle: true,
+		// 	fleetTracking: true,
+		// },
+	})
+
+	res.send(bookings)
+})
 
 router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 	const bookings = req.body

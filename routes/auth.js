@@ -18,7 +18,7 @@ router.post("/login", async (req, res) => {
 
 	const token = generateUserAuthToken(user)
 	const result = {
-		token, 
+		token: `Bearer ${token}`, 
 		role: user.role,
 	}
 	res.send(result)

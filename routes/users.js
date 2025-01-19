@@ -13,6 +13,10 @@ router.get("/", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res) 
 	res.send(_.map(users, (user) => _.omit(user, "password")))
 })
 
+router.get("/me", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
+	res.send(req.user)
+})
+
 router.get("/:id", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
 	const { id } = req.params
 	const user = await prismaClient.user.findUnique({ where: { id } })
@@ -47,6 +51,16 @@ router.post("/", async (req, res) => {
 		.header("Authorization", `Bearer ${generateUserAuthToken(newUser)}`)
 		.header("access-control-expose-headers", "Authorization")
 		.send(_.omit(newUser, ["password"]))
+})
+
+router.delete("/:id", async (req, res) => {
+	const { id } = req.params
+	const user = await prismaClient.user.findUnique({ where: { id } })
+	if (!user) return res.status(404).send("User not found")
+	
+    await prismaClient.user.delete({ where: { id } });
+
+    res.status(200).send({ message: "User deleted successfully" });
 })
 
 async function hashPassword(password) {

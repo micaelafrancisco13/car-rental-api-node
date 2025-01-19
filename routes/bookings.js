@@ -37,6 +37,25 @@ router.get("/", async (req, res) => {
 	res.send(bookings)
 })
 
+
+router.get("/my", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
+	const filter = {
+		bookerId: req.user.id,
+		status: {
+		  notIn: ["CANCELLED", "COMPLETED"],
+		}
+	  };
+	const bookings = await prismaClient.booking.findMany({
+		where: filter,
+		include: {
+			vehicle: true, 
+			booker: true
+		  },
+	})
+
+ 	res.send(bookings)
+})
+
 router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 	const bookings = req.body
 	if (!Array.isArray(bookings))

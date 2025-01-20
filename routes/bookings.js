@@ -27,11 +27,11 @@ router.get("/", async (req, res) => {
 	const bookings = await prismaClient.booking.findMany({
 		where: filter,
 		orderBy: { [req.query.sortBy || DEFAULT_SORT_BY]: req.query.order || DEFAULT_ORDER },
-		// include: {
-		// 	booker: true,
-		// 	vehicle: true,
-		// 	fleetTracking: true,
-		// },
+		include: {
+			booker: true,
+			vehicle: true,
+			fleetTracking: true,
+		},
 	})
 
 	res.send(bookings)

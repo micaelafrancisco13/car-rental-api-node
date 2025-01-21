@@ -1,7 +1,7 @@
 const auth = require("../filter-chains/auth")
 const express = require("express")
 const authorizeRoles = require("../filter-chains/authorizeRoles")
-const { validateBooking } = require("../models/Booking")
+const { validateBooking } = require("../models/booking")
 const BookingService = require("../helpers/booking")
 const { prismaClient } = require("../startup/database")
 const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")

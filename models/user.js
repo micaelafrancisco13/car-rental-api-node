@@ -45,6 +45,13 @@ function validateUser(user) {
 	return getJoiSchema().validate(user)
 }
 
+function validateModifiedUser(data) {
+	return joi
+		.object({
+			id: joi.string().uuid().required().label("User ID"),
+		})
+		.validate(data)
+}
 function validateLoginCredentials(credentials) {
 	const schema = joi.object({
 		email: joi.string().email().required().label("Email"),
@@ -57,3 +64,4 @@ function validateLoginCredentials(credentials) {
 exports.validateUser = validateUser
 exports.validateLoginCredentials = validateLoginCredentials
 exports.generateUserAuthToken = generateAuthToken
+exports.validateModifiedUser = validateModifiedUser

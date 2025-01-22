@@ -7,6 +7,7 @@ const { prismaClient } = require("../startup/database")
 const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")
 const router = express.Router()
 
+const { startOfWeek, startOfMonth, startOfYear, format } = require("date-fns");
 const buildBookingFilter = (query) => {
 	const filter = {}
 	if (query.bookerId) filter.bookerId = query.bookerId
@@ -20,6 +21,82 @@ const buildBookingFilter = (query) => {
 	}
 	return filter
 }
+
+router.get("/dashboard", async (req, res) => {
+	const interval = req.params.interval
+	const vehicleCount = await prismaClient.vehicle.groupBy({
+		by: ['availabilityStatus'], 
+		_count: {
+		  id: true, 
+		},
+	  });
+
+	const bookingStatusCount = await prismaClient.booking.groupBy({
+		by: ['status'], 
+		_count: {
+			id: true, 
+		},
+	});
+
+	const bookingPaymentStatusCount = await prismaClient.booking.groupBy({
+		by: ['paymentStatus'], 
+		_count: {
+			id: true, 
+		},
+	});
+	let dateGroupFormat;
+    let startDate;
+
+    const today = new Date();
+
+    switch ("month") {
+      case "week":
+        startDate = startOfWeek(today); 
+        dateGroupFormat = "yyyy-ww"; 
+        break;
+      case "month":
+        startDate = startOfMonth(today); 
+        dateGroupFormat = "yyyy-MM"; 
+        break;
+      case "year":
+        startDate = startOfYear(today); 
+        dateGroupFormat = "yyyy"; 
+        break;
+      default:
+        throw new Error("Invalid interval type");
+    }
+
+    // Fetch and group data using Prisma
+    const result = await prismaClient.booking.groupBy({
+      by: ["startDate"],
+      _sum: {
+        totalPrice: true, 
+      },
+      where: {
+        startDate: {
+          gte: startDate,
+        },
+      },
+      orderBy: {
+        startDate: "asc",
+      },
+    });
+
+    // Format data for the line graph
+    const formattedData = result.map((item) => ({
+      date: format(new Date(item.startDate), dateGroupFormat), // Format date for grouping
+      totalIncome: item._sum.totalPrice || 0, // Use totalPrice or 0 if null
+    }));
+
+	const count = {
+		vehicleCount,
+		bookingStatusCount,
+		bookingPaymentStatusCount,
+		formattedData
+	}
+
+	res.send(count)
+})
 
 router.get("/", async (req, res) => {
 	const filter = buildBookingFilter(req.query)

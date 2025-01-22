@@ -52,6 +52,7 @@ function validateModifiedUser(data) {
 		})
 		.validate(data)
 }
+
 function validateLoginCredentials(credentials) {
 	const schema = joi.object({
 		email: joi.string().email().required().label("Email"),

@@ -14,4 +14,31 @@ function validateBooking(booking) {
 	return getJoiSchema().validate(booking)
 }
 
+
+function validateStatus(status) {
+	return joi
+		.object({
+			status: joi
+				.string()
+				.valid("PENDING", "IN_PROGRESS", "ACCEPTED", "COMPLETED", "CANCELLED")
+				.required()
+				.label("Availability Status"),
+		})
+		.validate(status)
+}
+
+function validatePaymentStatus(status) {
+	return joi
+		.object({
+			status: joi
+				.string()
+				.valid("PENDING", "PAID", "FAILED")
+				.required()
+				.label("Availability Status"),
+		})
+		.validate(status)
+}
+
 exports.validateBooking = validateBooking
+exports.validateStatus = validateStatus
+exports.validatePaymentStatus = validatePaymentStatus

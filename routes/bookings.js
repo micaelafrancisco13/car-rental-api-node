@@ -1,7 +1,7 @@
 const auth = require("../filter-chains/auth")
 const express = require("express")
 const authorizeRoles = require("../filter-chains/authorizeRoles")
-const { validateBooking } = require("../models/booking")
+const { validateBooking, validateStatus, validatePaymentStatus } = require("../models/booking")
 const BookingService = require("../helpers/booking")
 const { prismaClient } = require("../startup/database")
 const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")
@@ -67,7 +67,6 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 			return res.status(400).send(`${error.details[0].message} for the booking at index ${i}`)
 	}
 
-	// Validate date ranges in the input array
 	const dateRangesSet = new Set()
 	for (let i = 0; i < bookings.length; ++i) {
 		const { vehicleId, startDate, endDate } = bookings[i]
@@ -123,6 +122,48 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 		res.status(400).send(exception.message)
 	}
 })
+
+router.patch(
+	"/:id/status",
+	[auth, authorizeRoles(["BOOKER","EMPLOYEE", "ADMIN"])],
+	async (req, res) => {
+		const { id } = req.params
+
+		const { error } = validateStatus(req.body)
+		if (error) return res.status(400).send(error.details[0].message)
+
+		const booking = await prismaClient.booking.findUnique({ where: { id } })
+		if (!booking) return res.status(404).send("Booking not found")
+
+		const updatedBooking = await prismaClient.booking.update({
+			where: { id },
+			data: { status: req.body.status.toUpperCase() },
+		})
+
+		res.send(updatedBooking)
+	},
+)
+
+router.patch(
+	"/:id/paymentStatus",
+	[auth, authorizeRoles(["EMPLOYEE", "ADMIN"])],
+	async (req, res) => {
+		const { id } = req.params
+
+		const { error } = validatePaymentStatus(req.body)
+		if (error) return res.status(400).send(error.details[0].message)
+
+		const booking = await prismaClient.booking.findUnique({ where: { id } })
+		if (!booking) return res.status(404).send("Booking not found")
+
+		const updatedBooking = await prismaClient.booking.update({
+			where: { id },
+			data: { paymentStatus: req.body.status.toUpperCase() },
+		})
+
+		res.send(updatedBooking)
+	},
+)
 
 router.delete("/", [auth, authorizeRoles(["BOOKER", "ADMIN"])], async (req, res) => {
 	const deletedBookings = await prismaClient.booking.deleteMany({})

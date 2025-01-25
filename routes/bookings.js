@@ -7,7 +7,7 @@ const { prismaClient } = require("../startup/database")
 const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")
 const router = express.Router()
 
-const { startOfWeek, startOfMonth, startOfYear, format } = require("date-fns");
+const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("date-fns");
 const buildBookingFilter = (query) => {
 	const filter = {}
 	if (query.bookerId) filter.bookerId = query.bookerId
@@ -117,9 +117,9 @@ router.get("/", async (req, res) => {
 router.get("/my", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 	const filter = {
 		bookerId: req.user.id,
-		status: {
-			notIn: ["CANCELLED", "COMPLETED"],
-		},
+		// status: {
+		// 	notIn: ["CANCELLED", "COMPLETED"],
+		// },
 	}
 	const bookings = await prismaClient.booking.findMany({
 		where: filter,
@@ -183,8 +183,8 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 						vehicle: { connect: { id: vehicleId } },
 						startLocation,
 						endLocation,
-						startDate,
-						endDate,
+						startDate: parseISO(startDate),
+						endDate: parseISO(startDate),
 						totalPrice: bookingService.calculateTotalPrice(),
 						status: new Date(startDate) > new Date() ? "PENDING" : "IN_PROGRESS",
 						deliveryType: bookingService.getDeliveryType(),
@@ -224,7 +224,7 @@ router.patch(
 		
 		if (vehicleStatus) {
 			await prismaClient.vehicle.update({
-				where: { id },
+				where: { id:booking.vehicleId },
 				data: { availabilityStatus: vehicleStatus },
 			})
 		}

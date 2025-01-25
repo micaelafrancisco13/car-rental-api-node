@@ -62,13 +62,22 @@ function validateLoginCredentials(credentials) {
 	return schema.validate(credentials)
 }
 
-function validatePasswords(credentials) {
+function validatePasswords(passwords) {
 	const schema = joi.object({
 		currentPassword: joi.string().required().label("Current Password"),
 		newPassword: getJoiSchema().extract("password").label("New Password"),
 	})
 
-	return schema.validate(credentials)
+	return schema.validate(passwords)
+}
+
+function validateResetPassword(data) {
+	const schema = joi.object({
+		userId: joi.string().uuid().required().label("User ID"),
+		newPassword: getJoiSchema().extract("password").label("New Password"),
+	})
+
+	return schema.validate(data)
 }
 
 exports.generateUserAuthToken = generateAuthToken
@@ -76,3 +85,4 @@ exports.validateUser = validateUser
 exports.validateLoginCredentials = validateLoginCredentials
 exports.validateModifiedUser = validateModifiedUser
 exports.validatePasswords = validatePasswords
+exports.validateResetPassword = validateResetPassword

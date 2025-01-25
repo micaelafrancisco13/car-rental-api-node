@@ -1,10 +1,10 @@
 const express = require("express")
-const { genSalt, hash } = require("bcrypt")
 const { validateUser, generateUserAuthToken, validateModifiedUser } = require("../models/user")
 const _ = require("lodash")
 const auth = require("../filter-chains/auth")
 const authorizeRoles = require("../filter-chains/authorizeRoles")
 const { prismaClient } = require("../startup/database")
+const { hashPassword } = require("./auth")
 const router = express.Router()
 
 router.get("/", [auth, authorizeRoles(["EMPLOYEE", "ADMIN"])], async (req, res) => {
@@ -106,10 +106,5 @@ router.delete("/:id", async (req, res) => {
 
 	res.status(200).send({ message: "User deleted successfully" })
 })
-
-async function hashPassword(password) {
-	const salt = await genSalt(13)
-	return await hash(password, salt)
-}
 
 module.exports = router

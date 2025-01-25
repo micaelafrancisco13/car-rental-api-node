@@ -18,7 +18,7 @@ function generateAuthToken(user) {
 function getJoiSchema() {
 	return joi.object({
 		firstName: joi.string().min(2).max(255).required().label("First Name"),
-		lastName: joi.string().min(2).max(255).required().label("Last Lame"),
+		lastName: joi.string().min(2).max(255).required().label("Last Name"),
 		email: joi
 			.string()
 			.email({ tlds: { allow: true } })
@@ -62,7 +62,27 @@ function validateLoginCredentials(credentials) {
 	return schema.validate(credentials)
 }
 
+function validatePasswords(passwords) {
+	const schema = joi.object({
+		currentPassword: joi.string().required().label("Current Password"),
+		newPassword: getJoiSchema().extract("password").label("New Password"),
+	})
+
+	return schema.validate(passwords)
+}
+
+function validateResetPassword(data) {
+	const schema = joi.object({
+		userId: joi.string().uuid().required().label("User ID"),
+		newPassword: getJoiSchema().extract("password").label("New Password"),
+	})
+
+	return schema.validate(data)
+}
+
+exports.generateUserAuthToken = generateAuthToken
 exports.validateUser = validateUser
 exports.validateLoginCredentials = validateLoginCredentials
-exports.generateUserAuthToken = generateAuthToken
 exports.validateModifiedUser = validateModifiedUser
+exports.validatePasswords = validatePasswords
+exports.validateResetPassword = validateResetPassword

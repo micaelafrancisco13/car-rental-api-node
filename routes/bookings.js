@@ -7,7 +7,7 @@ const { prismaClient } = require("../startup/database")
 const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")
 const router = express.Router()
 
-const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("date-fns");
+const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("date-fns")
 const buildBookingFilter = (query) => {
 	const filter = {}
 	if (query.bookerId) filter.bookerId = query.bookerId
@@ -25,29 +25,29 @@ const buildBookingFilter = (query) => {
 router.get("/dashboard", async (req, res) => {
 	const interval = req.params.interval || "month"
 	const vehicleCount = await prismaClient.vehicle.groupBy({
-		by: ['availabilityStatus'], 
+		by: ["availabilityStatus"],
 		_count: {
-		  id: true, 
+			id: true,
 		},
-	  });
+	})
 
 	const bookingStatusCount = await prismaClient.booking.groupBy({
-		by: ['status'], 
+		by: ["status"],
 		_count: {
-			id: true, 
+			id: true,
 		},
-	});
+	})
 
 	const bookingPaymentStatusCount = await prismaClient.booking.groupBy({
-		by: ['paymentStatus'], 
+		by: ["paymentStatus"],
 		_count: {
-			id: true, 
+			id: true,
 		},
-	});
-	let dateGroupFormat;
-    let startDate;
+	})
+	let dateGroupFormat
+	let startDate
 
-    const today = new Date();
+	const today = new Date()
 
     switch (interval) {
       case "week":
@@ -83,13 +83,13 @@ router.get("/dashboard", async (req, res) => {
 		bookingStatusCount,
 		bookingPaymentStatusCount,
 		// formattedData,
-		result
+		result,
 	}
 
 	res.send(count)
 })
 
-router.get("/", async (req, res) => {
+router.get("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 	const filter = buildBookingFilter(req.query)
 
 	const bookings = await prismaClient.booking.findMany({
@@ -123,7 +123,7 @@ router.get("/my", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 	res.send(bookings)
 })
 
-router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
+router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async (req, res) => {
 	const bookings = req.body
 	if (!Array.isArray(bookings))
 		return res.status(400).send("Invalid input: Expected an array of bookings.")
@@ -192,7 +192,7 @@ router.post("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 
 router.patch(
 	"/:id/status",
-	[auth, authorizeRoles(["BOOKER","EMPLOYEE", "ADMIN"])],
+	[auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])],
 	async (req, res) => {
 		const { id } = req.params
 
@@ -206,13 +206,13 @@ router.patch(
 			where: { id },
 			data: { status: req.body.status.toUpperCase() },
 		})
-		let vehicleStatus;
+		let vehicleStatus
 		if (req.body.status === "IN_PROGRESS") {
 			vehicleStatus = "BOOKED"
 		} else if (req.body.status === "COMPLETED" || req.body.status === "CANCELLED") {
 			vehicleStatus = "AVAILABLE"
 		}
-		
+
 		if (vehicleStatus) {
 			await prismaClient.vehicle.update({
 				where: { id:booking.vehicleId },

@@ -23,7 +23,7 @@ const buildBookingFilter = (query) => {
 }
 
 router.get("/dashboard", async (req, res) => {
-	const interval = req.params.interval
+	const interval = req.params.interval || "month"
 	const vehicleCount = await prismaClient.vehicle.groupBy({
 		by: ['availabilityStatus'], 
 		_count: {
@@ -49,14 +49,14 @@ router.get("/dashboard", async (req, res) => {
 
     const today = new Date();
 
-    switch ("month") {
+    switch (interval) {
       case "week":
         startDate = startOfWeek(today); 
         dateGroupFormat = "yyyy-ww"; 
         break;
       case "month":
         startDate = startOfMonth(today); 
-        dateGroupFormat = "yyyy-MM"; 
+        dateGroupFormat = "Month"; 
         break;
       case "year":
         startDate = startOfYear(today); 
@@ -66,33 +66,24 @@ router.get("/dashboard", async (req, res) => {
         throw new Error("Invalid interval type");
     }
 
-    // Fetch and group data using Prisma
-    const result = await prismaClient.booking.groupBy({
-      by: ["startDate"],
-      _sum: {
-        totalPrice: true, 
-      },
-      where: {
-        startDate: {
-          gte: startDate,
-        },
-      },
-      orderBy: {
-        startDate: "asc",
-      },
-    });
 
-    // Format data for the line graph
-    const formattedData = result.map((item) => ({
-      date: format(new Date(item.startDate), dateGroupFormat), // Format date for grouping
-      totalIncome: item._sum.totalPrice || 0, // Use totalPrice or 0 if null
-    }));
+	const result = await prismaClient.$queryRaw`
+	SELECT 
+	  TO_CHAR("endDate", ${dateGroupFormat}) AS "formattedEndDate", -- Format endDate dynamically
+	  SUM("totalPrice") AS "totalPrice"
+	FROM "Booking"
+	WHERE "status" = 'COMPLETED'
+	  AND "endDate" >= ${startDate} -- Filter by start date
+	GROUP BY "formattedEndDate"
+	ORDER BY "formattedEndDate";
+  `;
 
 	const count = {
 		vehicleCount,
 		bookingStatusCount,
 		bookingPaymentStatusCount,
-		formattedData
+		// formattedData,
+		result
 	}
 
 	res.send(count)

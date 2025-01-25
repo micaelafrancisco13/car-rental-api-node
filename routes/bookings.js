@@ -89,7 +89,7 @@ router.get("/dashboard", async (req, res) => {
 	res.send(count)
 })
 
-router.get("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
+router.get("/", [auth, authorizeRoles(["BOOKER", "ADMIN", "EMPLOYEE"])], async (req, res) => {
 	const filter = buildBookingFilter(req.query)
 
 	const bookings = await prismaClient.booking.findMany({

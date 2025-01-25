@@ -215,7 +215,19 @@ router.patch(
 			where: { id },
 			data: { status: req.body.status.toUpperCase() },
 		})
-
+		let vehicleStatus;
+		if (req.body.status === "IN_PROGRESS") {
+			vehicleStatus = "BOOKED"
+		} else if (req.body.status === "COMPLETED" || req.body.status === "CANCELLED") {
+			vehicleStatus = "AVAILABLE"
+		}
+		
+		if (vehicleStatus) {
+			await prismaClient.vehicle.update({
+				where: { id },
+				data: { availabilityStatus: vehicleStatus },
+			})
+		}
 		res.send(updatedBooking)
 	},
 )

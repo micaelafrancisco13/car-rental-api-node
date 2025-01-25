@@ -63,7 +63,7 @@ router.post(
 		const { error } = validateResetPassword(req.body)
 		if (error) return res.status(400).send(error.details[0].message)
 
-		const userId = req.user.id
+		const userId = req.body.userId
 
 		const user = await prismaClient.user.findUnique({
 			where: { id: userId },

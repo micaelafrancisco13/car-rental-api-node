@@ -14,7 +14,6 @@ function validateBooking(booking) {
 	return getJoiSchema().validate(booking)
 }
 
-
 function validateStatus(status) {
 	return joi
 		.object({

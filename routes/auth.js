@@ -28,7 +28,7 @@ router.post("/login", async (req, res) => {
 	res.send(`Bearer ${token}`)
 })
 
-router.put(
+router.post(
 	"/change-password",
 	[auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])],
 	async (req, res) => {
@@ -56,7 +56,7 @@ router.put(
 	},
 )
 
-router.put(
+router.post(
 	"/reset-password",
 	[auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])],
 	async (req, res) => {

@@ -7,7 +7,7 @@ const { prismaClient } = require("../startup/database")
 const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")
 const router = express.Router()
 
-const { startOfWeek, startOfMonth, startOfYear, format } = require("date-fns")
+const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("date-fns")
 const buildBookingFilter = (query) => {
 	const filter = {}
 	if (query.bookerId) filter.bookerId = query.bookerId
@@ -23,6 +23,7 @@ const buildBookingFilter = (query) => {
 }
 
 router.get("/dashboard", async (req, res) => {
+	const interval = req.params.interval || "month"
 	const vehicleCount = await prismaClient.vehicle.groupBy({
 		by: ["availabilityStatus"],
 		_count: {
@@ -48,56 +49,47 @@ router.get("/dashboard", async (req, res) => {
 
 	const today = new Date()
 
-	switch ("month") {
-		case "week":
-			startDate = startOfWeek(today)
-			dateGroupFormat = "yyyy-ww"
-			break
-		case "month":
-			startDate = startOfMonth(today)
-			dateGroupFormat = "yyyy-MM"
-			break
-		case "year":
-			startDate = startOfYear(today)
-			dateGroupFormat = "yyyy"
-			break
-		default:
-			throw new Error("Invalid interval type")
-	}
+    switch (interval) {
+      case "week":
+        startDate = startOfWeek(today); 
+        dateGroupFormat = "yyyy-ww"; 
+        break;
+      case "month":
+        startDate = startOfMonth(today); 
+        dateGroupFormat = "Month"; 
+        break;
+      case "year":
+        startDate = startOfYear(today); 
+        dateGroupFormat = "yyyy"; 
+        break;
+      default:
+        throw new Error("Invalid interval type");
+    }
 
-	// Fetch and group data using Prisma
-	const result = await prismaClient.booking.groupBy({
-		by: ["startDate"],
-		_sum: {
-			totalPrice: true,
-		},
-		where: {
-			startDate: {
-				gte: startDate,
-			},
-		},
-		orderBy: {
-			startDate: "asc",
-		},
-	})
 
-	// Format data for the line graph
-	const formattedData = result.map((item) => ({
-		date: format(new Date(item.startDate), dateGroupFormat), // Format date for grouping
-		totalIncome: item._sum.totalPrice || 0, // Use totalPrice or 0 if null
-	}))
+	const result = await prismaClient.$queryRaw`
+	SELECT 
+	  TO_CHAR("endDate", ${dateGroupFormat}) AS "formattedEndDate", -- Format endDate dynamically
+	  SUM("totalPrice") AS "totalPrice"
+	FROM "Booking"
+	WHERE "status" = 'COMPLETED'
+	  AND "endDate" >= ${startDate} -- Filter by start date
+	GROUP BY "formattedEndDate"
+	ORDER BY "formattedEndDate";
+  `;
 
 	const count = {
 		vehicleCount,
 		bookingStatusCount,
 		bookingPaymentStatusCount,
-		formattedData,
+		// formattedData,
+		result,
 	}
 
 	res.send(count)
 })
 
-router.get("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
+router.get("/", [auth, authorizeRoles(["BOOKER", "ADMIN", "EMPLOYEE"])], async (req, res) => {
 	const filter = buildBookingFilter(req.query)
 
 	const bookings = await prismaClient.booking.findMany({
@@ -116,9 +108,9 @@ router.get("/", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 router.get("/my", [auth, authorizeRoles(["BOOKER"])], async (req, res) => {
 	const filter = {
 		bookerId: req.user.id,
-		status: {
-			notIn: ["CANCELLED", "COMPLETED"],
-		},
+		// status: {
+		// 	notIn: ["CANCELLED", "COMPLETED"],
+		// },
 	}
 	const bookings = await prismaClient.booking.findMany({
 		where: filter,
@@ -182,8 +174,8 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 						vehicle: { connect: { id: vehicleId } },
 						startLocation,
 						endLocation,
-						startDate,
-						endDate,
+						startDate: parseISO(startDate),
+						endDate: parseISO(startDate),
 						totalPrice: bookingService.calculateTotalPrice(),
 						status: new Date(startDate) > new Date() ? "PENDING" : "IN_PROGRESS",
 						deliveryType: bookingService.getDeliveryType(),
@@ -223,7 +215,7 @@ router.patch(
 
 		if (vehicleStatus) {
 			await prismaClient.vehicle.update({
-				where: { id },
+				where: { id:booking.vehicleId },
 				data: { availabilityStatus: vehicleStatus },
 			})
 		}

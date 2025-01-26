@@ -94,12 +94,12 @@ class BookingService {
 				status: { in: ["PENDING", "ACCEPTED", "IN_PROGRESS"] },
 				OR: [
 					{
-						startDate: { lte: this.endDate },
-						endDate: { gte: this.startDate },
+						startDate: { lte: parseISO(this.endDate) },
+						endDate: { gte: parseISO(this.startDate) },
 					},
 					{
-						startDate: { lte: this.startDate },
-						endDate: { gte: this.endDate },
+						startDate: { lte: parseISO(this.startDate) },
+						endDate: { gte: parseISO(this.endDate) },
 					},
 				],
 			},

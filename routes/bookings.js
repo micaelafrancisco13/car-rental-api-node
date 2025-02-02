@@ -191,7 +191,7 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 						startLocation,
 						endLocation,
 						startDate: parseISO(startDate),
-						endDate: parseISO(startDate),
+						endDate: parseISO(endDate),
 						totalPrice: bookingService.calculateTotalPrice(),
 						status: new Date(startDate) > new Date() ? "PENDING" : "IN_PROGRESS",
 						deliveryType: bookingService.getDeliveryType(),

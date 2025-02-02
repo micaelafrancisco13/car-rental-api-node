@@ -79,6 +79,7 @@ model Booking {
   paymentStatus PaymentStatus  @default(PENDING)
   deliveryType  DeliveryType   @default(DROPOFF)
   fleetTracking FleetTracking?
+  tripHistory   TripHistory[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -91,10 +92,34 @@ model FleetTracking {
   // driverLongitude Float?
   bookerLatitude  Float?
   bookerLongitude Float?
+  speed           Float?
   tripStatus      TripStatus @default(IDLE)
   lastUpdatedAt   DateTime   @updatedAt
 }
 
+model TripHistory {
+  id          String     @id @default(uuid())
+  bookingId   String
+  booking     Booking    @relation(fields: [bookingId], references: [id])
+  latitude    Float?
+  longitude   Float?
+  speed       Float? 
+  tripStatus  TripStatus
+  drivingDuration Float?
+  locations       Location[]
+  recordedAt  DateTime   @default(now())
+  @@index([bookingId])
+  @@index([recordedAt])
+}
+
+model Location {
+  id          String     @id @default(uuid())
+  tripHistoryId String
+  tripHistory TripHistory @relation(fields: [tripHistoryId], references: [id])
+  latitude    Float
+  longitude   Float
+  recordedAt  DateTime   @default(now())
+}
 // Enums
 enum Role {
   BOOKER
@@ -118,6 +143,7 @@ enum BookingStatus {
 
 enum TripStatus {
   IDLE
+  ON_TRIP
   ON_THE_WAY
   PICKED_UP
   DROPPED_OFF

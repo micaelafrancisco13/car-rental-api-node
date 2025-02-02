@@ -3,7 +3,7 @@ const cors = require("cors")
 module.exports = function (app) {
 	app.use(
 		cors({
-			origin: [process.env.UI_CLIENT_URL],
+			origin: [process.env.UI_CLIENT_URL, "http://localhost:5173"],
 		}),
 	)
 }

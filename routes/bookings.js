@@ -221,6 +221,10 @@ router.patch(
 		const updatedBooking = await prismaClient.booking.update({
 			where: { id },
 			data: { status: req.body.status.toUpperCase() },
+			include: {
+				booker: true,
+				vehicle: true,
+			}
 		})
 		let vehicleStatus
 		if (req.body.status === "IN_PROGRESS") {
@@ -254,6 +258,10 @@ router.patch(
 		const updatedBooking = await prismaClient.booking.update({
 			where: { id },
 			data: { paymentStatus: req.body.status.toUpperCase() },
+			include: {
+				booker: true,
+				vehicle: true,
+			}
 		})
 
 		res.send(updatedBooking)

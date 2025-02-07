@@ -22,12 +22,16 @@ router.get("/:id", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], asyn
 })
 
 router.post("/", async (req, res) => {
-	const { error } = validateUser(req.body)
-	if (error) return res.status(400).send(error.details[0].message)
+	try {
+		const { error } = validateUser(req.body)
+	if (error) {
+		console.log({error, details: error.details, req: req.body})
+		return res.status(400).send(error.details[0].message)}
 
 	let user = await prismaClient.user.findUnique({
 		where: { email: req.body.email },
 	})
+
 	if (user) return res.status(400).send(`The email ${req.body.email} is already used`)
 
 	user = await prismaClient.user.findUnique({
@@ -47,6 +51,9 @@ router.post("/", async (req, res) => {
 		.header("Authorization", `Bearer ${generateUserAuthToken(newUser)}`)
 		.header("access-control-expose-headers", "Authorization")
 		.send(_.omit(newUser, ["password"]))
+	} catch(error){
+		console.log({error})
+	}
 })
 
 router.put("/:id", async (req, res) => {

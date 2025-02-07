@@ -38,6 +38,10 @@ function getJoiSchema() {
 		longitude: joi.number().min(-180).max(180).required().label("Longitude"),
 		password: joi.string().min(8).max(50).required().label("Password"),
 		role: joi.string().valid("BOOKER", "EMPLOYEE", "ADMIN").required().label("Role"),
+		city: joi.string().min(2).max(255).required().label("City"),
+		otherAddress: joi.string().min(2).max(255).required().label("Other Address"),
+		validIdType: joi.string().min(2).max(255).required().label("Valid Id Type"),
+		validIdNumber: joi.string().min(2).max(255).required().label("Valid Id Number")
 	})
 }
 

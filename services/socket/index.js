@@ -16,50 +16,6 @@ const initSocket = (server) => {
 	io.on("connection", (socket) => {
 		console.log("A client connected:", socket.id)
 
-		// initialize(io)
-		// handleSendData(socket)
-		// socket.on('updateLocation', async (data) => {
-		// 	const { bookingId, latitude, longitude, speed, tripStatus } = data;
-			
-		// 	let drivingDuration = 0;
-		// 	// Update the FleetTracking table with the new location
-			
-		// 	const currentTrip = await prismaClient.fleetTracking.findUnique({
-		// 		where: { bookingId }
-		// 	})
-
-		// 	if (currentTrip) {
-		// 		const now = new Date();
-		// 		const lastUpdatedAt = currentTrip.lastUpdatedAt
-
-		// 		if (currentTrip.tripStatus === "IDLE" && tripStatus === "ON_TRIP") {
-		// 			drivingDuration = 0;
-		// 		} else if (currentTrip.tripStatus === "ON_TRIP" && tripStatus === "ON_TRIP") {
-		// 			drivingDuration = Math.floor((now.getTime() - lastUpdatedAt.getTime()) / 1000);
-		// 		}
-		// 	}
-			
-		// 	await prismaClient.fleetTracking.upsert({
-		// 	  where: { bookingId },
-		// 	  update: { bookerLatitude: latitude, bookerLongitude: longitude, speed, lastUpdatedAt: new Date(), tripStatus },
-		// 	  create: { bookingId, bookerLatitude: latitude, bookerLongitude: longitude, speed, tripStatus: 'ON_TRIP' }
-		// 	});
-
-		// 	if (!currentTrip || currentTrip.tripStatus !== tripStatus) {
-		// 		await prismaClient.tripHistory.create({
-		// 		  data: {
-		// 			booking: { connect: { id: bookingId } },
-		// 			latitude,
-		// 			longitude,
-		// 			speed,
-		// 			tripStatus,
-		// 			drivingDuration,
-		// 		  },
-		// 		});
-		// 	}
-		// 	// Emit the updated location to all admins
-		// 	io.emit('locationUpdated', { bookingId, latitude, longitude, speed, tripStatus, drivingDuration });
-		//   });
 		socket.on('updateLocation', async (data) => {
 			const { bookingId, latitude, longitude, speed, tripStatus } = data;
 			
@@ -80,13 +36,13 @@ const initSocket = (server) => {
 				drivingDuration = Math.floor((now.getTime() - lastUpdatedAt.getTime()) / 1000);
 			  }
 			}
-			console.log({tripStatus})
+
 			await prismaClient.fleetTracking.upsert({
 			  where: { bookingId },
 			  update: { bookerLatitude: latitude, bookerLongitude: longitude, speed, lastUpdatedAt: new Date(), tripStatus },
 			  create: { bookingId, bookerLatitude: latitude, bookerLongitude: longitude, speed, tripStatus: 'ON_TRIP' }
 			});
-			console.log({currentTrip})
+
 			if (!currentTrip || currentTrip.tripStatus !== tripStatus) {
 			  const newTripHistory = await prismaClient.tripHistory.create({
 				data: {
@@ -113,7 +69,7 @@ const initSocket = (server) => {
 				where: { bookingId, tripStatus: 'ON_TRIP' },
 				orderBy: { recordedAt: 'desc' },
 			  });
-			  console.log({currentTripHistory})
+
 			  if (currentTripHistory) {
 				await prismaClient.location.create({
 				  data: {

@@ -20,7 +20,10 @@ model User {
   bookings    Booking[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
+  city          String?   
+  otherAddress  String?   
+  validIdType   String?   
+  validIdNumber String?  
   // Relationships
   // booker Booker?
   // driver Driver?
@@ -75,6 +78,8 @@ model Booking {
   startDate     DateTime       @default(now())
   endDate       DateTime       @updatedAt
   totalPrice    Decimal
+  depositPaid   Decimal?        @default(0)
+  balance       Decimal?        @default(0)
   status        BookingStatus  @default(PENDING)
   paymentStatus PaymentStatus  @default(PENDING)
   deliveryType  DeliveryType   @default(DROPOFF)

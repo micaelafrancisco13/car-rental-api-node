@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Booking" ADD COLUMN     "balance" DECIMAL(65,30) NOT NULL DEFAULT 0,
+ADD COLUMN     "depositPaid" DECIMAL(65,30) NOT NULL DEFAULT 0;

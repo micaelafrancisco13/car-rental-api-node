@@ -8,9 +8,9 @@ const { DEFAULT_SORT_BY, DEFAULT_ORDER } = require("../helpers/constants")
 const router = express.Router()
 
 const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("date-fns")
-const buildBookingFilter = (query) => {
+const buildBookingFilter = (query, user) => {
 	const filter = {}
-	if (query.bookerId) filter.bookerId = query.bookerId
+	if (query.bookerId || user.role === "BOOKER") filter.bookerId = user.bookerId
 	if (query.vehicleId) filter.vehicleId = query.vehicleId
 	if (query.status) filter.status = query.status
 	if (query.paymentStatus) filter.paymentStatus = query.paymentStatus
@@ -18,6 +18,10 @@ const buildBookingFilter = (query) => {
 	if (query.startDate && query.endDate) {
 		filter.startDate = { gte: new Date(query.startDate) }
 		filter.endDate = { lte: new Date(query.endDate) }
+	}
+
+	if (user.role !== "BOOKER") {
+		filter.status = { not: "CANCELLED" };
 	}
 	return filter
 }
@@ -90,7 +94,7 @@ router.get("/dashboard", async (req, res) => {
 })
 
 router.get("/", [auth, authorizeRoles(["BOOKER", "ADMIN", "EMPLOYEE"])], async (req, res) => {
-	const filter = buildBookingFilter(req.query)
+	const filter = buildBookingFilter(req.query, req.user)
 
 	const bookings = await prismaClient.booking.findMany({
 		where: filter,
@@ -192,8 +196,9 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 						endLocation,
 						startDate: parseISO(startDate),
 						endDate: parseISO(endDate),
+						balance: bookingService.calculateTotalPrice(),
 						totalPrice: bookingService.calculateTotalPrice(),
-						status: new Date(startDate) > new Date() ? "PENDING" : "IN_PROGRESS",
+						status: "IN_PROGRESS",
 						deliveryType: bookingService.getDeliveryType(),
 					},
 				})
@@ -227,7 +232,7 @@ router.patch(
 			}
 		})
 		let vehicleStatus
-		if (req.body.status === "IN_PROGRESS") {
+		if (req.body.status === "IN_PROGRESS" || req.body.status === "RESERVED") {
 			vehicleStatus = "BOOKED"
 		} else if (req.body.status === "COMPLETED" || req.body.status === "CANCELLED") {
 			vehicleStatus = "AVAILABLE"
@@ -239,6 +244,35 @@ router.patch(
 				data: { availabilityStatus: vehicleStatus },
 			})
 		}
+		res.send(updatedBooking)
+	},
+)
+
+router.patch(
+	"/:id",
+	[auth, authorizeRoles(["BOOKER","EMPLOYEE", "ADMIN"])],
+	async (req, res) => {
+		const { id } = req.params
+
+		const booking = await prismaClient.booking.findUnique({ where: { id } })
+		if (!booking) return res.status(404).send("Booking not found")
+
+		const balance = booking.balance - req.body.depositPaid
+		const { startDate, endDate } = req.body.booking
+		const updatedBooking = await prismaClient.booking.update({
+			where: { id },
+			data: { 
+				startDate: parseISO(startDate),
+				endDate: parseISO(endDate),
+				depositPaid: req.body.depositPaid,
+				balance: balance,
+				paymentStatus: balance === 0 ? "PAID" : "PENDING" },
+			include: {
+				booker: true,
+				vehicle: true,
+			}
+		})
+
 		res.send(updatedBooking)
 	},
 )

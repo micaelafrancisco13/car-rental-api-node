@@ -225,7 +225,10 @@ router.patch(
 
 		const updatedBooking = await prismaClient.booking.update({
 			where: { id },
-			data: { status: req.body.status.toUpperCase() },
+			data: { 
+				startDate: booking.startDate,
+				endDate: booking.endDate,
+				status: req.body.status.toUpperCase() },
 			include: {
 				booker: true,
 				vehicle: true,
@@ -291,7 +294,10 @@ router.patch(
 
 		const updatedBooking = await prismaClient.booking.update({
 			where: { id },
-			data: { paymentStatus: req.body.status.toUpperCase() },
+			data: { 
+				startDate: booking.startDate,
+				endDate: booking.endDate,
+				paymentStatus: req.body.status.toUpperCase() },
 			include: {
 				booker: true,
 				vehicle: true,

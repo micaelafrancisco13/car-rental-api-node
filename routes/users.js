@@ -106,10 +106,21 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
 	const { id } = req.params
-	const user = await prismaClient.user.findUnique({ where: { id } })
-	if (!user) return res.status(404).send("User not found")
+	try {
+		const user = await prismaClient.user.findUnique({ where: { id } })
+		if (!user) return res.status(404).send("User not found")
+		
+		const userBookings = await prismaClient.booking.findMany({ where: { bookerId: id, status: "IN_PROGRESS" } });
+		if (userBookings.length > 0) {
+		  return res.status(400).json("User has active bookings and cannot be deleted.");
+		}
 
-	await prismaClient.user.delete({ where: { id } })
+		await prismaClient.booking.deleteMany({ where: { bookerId: id } });
+		await prismaClient.user.delete({ where: { id } })
+	} catch(err){
+		console.error(err)
+		res.status(500).send("An error occurred while updating the user")
+	}
 
 	res.status(200).send({ message: "User deleted successfully" })
 })

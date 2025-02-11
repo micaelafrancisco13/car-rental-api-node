@@ -105,7 +105,7 @@ model FleetTracking {
 model TripHistory {
   id          String     @id @default(uuid())
   bookingId   String
-  booking     Booking    @relation(fields: [bookingId], references: [id])
+  booking     Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   latitude    Float?
   longitude   Float?
   speed       Float? 
@@ -120,7 +120,7 @@ model TripHistory {
 model Location {
   id          String     @id @default(uuid())
   tripHistoryId String
-  tripHistory TripHistory @relation(fields: [tripHistoryId], references: [id])
+  tripHistory TripHistory @relation(fields: [tripHistoryId], references: [id], onDelete: Cascade)
   latitude    Float
   longitude   Float
   recordedAt  DateTime   @default(now())

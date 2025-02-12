@@ -174,10 +174,10 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 				const existingVehicle = await prismaClient.vehicle.findUnique({
 					where: { id: vehicleId },
 				})
-				if (!existingVehicle) throw new Error(`Vehicle at index ${i} not found`)
+				if (!existingVehicle) throw new Error(`Vehicle not found`)
 
 				if (existingVehicle.availabilityStatus !== "AVAILABLE")
-					throw new Error(`Vehicle at index ${i} not available`)
+					throw new Error(`Vehicle is not available`)
 
 				const bookingService = new BookingService(
 					existingVehicle.dailyRate,
@@ -202,6 +202,11 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 						deliveryType: bookingService.getDeliveryType(),
 					},
 				})
+				await prismaClient.vehicle.update({
+					where: { id: vehicleId },
+					data: { availabilityStatus: "BOOKED" },
+				})
+				
 				createdBookings.push(newBooking)
 			}
 		})
@@ -241,7 +246,7 @@ router.patch(
 			vehicleStatus = "AVAILABLE"
 		}
 
-		if (vehicleStatus) {
+		if (vehicleStatus && booking.vehicleId) {
 			await prismaClient.vehicle.update({
 				where: { id:booking.vehicleId },
 				data: { availabilityStatus: vehicleStatus },

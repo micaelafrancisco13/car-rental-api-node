@@ -246,7 +246,7 @@ router.patch(
 			vehicleStatus = "AVAILABLE"
 		}
 
-		if (vehicleStatus) {
+		if (vehicleStatus && booking.vehicleId) {
 			await prismaClient.vehicle.update({
 				where: { id:booking.vehicleId },
 				data: { availabilityStatus: vehicleStatus },

@@ -10,7 +10,8 @@ const router = express.Router()
 const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("date-fns")
 const buildBookingFilter = (query, user) => {
 	const filter = {}
-	if (query.bookerId || user.role === "BOOKER") filter.bookerId = user.bookerId
+	if (query.bookerId) filter.bookerId = user.bookerId
+	if (user.role === "BOOKER") filter.bookerId = user.id
 	if (query.vehicleId) filter.vehicleId = query.vehicleId
 	if (query.status) filter.status = query.status
 	if (query.paymentStatus) filter.paymentStatus = query.paymentStatus

@@ -23,6 +23,7 @@ function getJoiSchema() {
 			.required()
 			.label("Features"),
 		images: joi.array().items(joi.string().uri()).min(1).max(5).required().label("Images"),
+		type: joi.string().min(2).max(50).required().label("Car Type")
 	})
 }
 

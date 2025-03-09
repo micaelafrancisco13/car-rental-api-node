@@ -20,14 +20,16 @@ class BookingService {
 	center = ANGELES_CITY_CENTER
 	deliveryRadius = DELIVERY_RADIUS_METERS
 	deliveryType
+	paymentMode
 
-	constructor(dailyRate, startDate, endDate, latitude, longitude) {
+	constructor(dailyRate, startDate, endDate, latitude, longitude, paymentMode) {
 		this.dailyRate = dailyRate
 		this.startDate = startDate
 		this.endDate = endDate
 		this.latitude = latitude
 		this.longitude = longitude
 		this.deliveryType = this.#determineDeliveryType()
+		this.paymentMode = paymentMode
 	}
 
 	static async updateBookingStatus() {

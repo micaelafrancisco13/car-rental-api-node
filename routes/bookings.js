@@ -11,7 +11,7 @@ const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("da
 const buildBookingFilter = (query, user) => {
 	const filter = {}
 	if (query.bookerId) filter.bookerId = user.bookerId
-	if (user.role === "BOOKER") filter.bookerId = user.id
+	if (user.role === "BOOKER" && !query.isAll) filter.bookerId = user.id
 	if (query.vehicleId) filter.vehicleId = query.vehicleId
 	if (query.status) filter.status = query.status
 	if (query.paymentStatus) filter.paymentStatus = query.paymentStatus
@@ -20,7 +20,7 @@ const buildBookingFilter = (query, user) => {
 		filter.startDate = { gte: new Date(query.startDate) }
 		filter.endDate = { lte: new Date(query.endDate) }
 	}
-
+	if (query.paymentMode) filter.paymentMode = query.paymentMode
 	if (user.role !== "BOOKER") {
 		filter.status = { not: "CANCELLED" };
 	}
@@ -28,60 +28,57 @@ const buildBookingFilter = (query, user) => {
 }
 
 router.get("/dashboard", async (req, res) => {
-	const interval = req.params.interval || "month"
+
+    const { fromDate, toDate } = req.query;
+
+    const startDate = fromDate ? new Date(fromDate) :  toDate ? new Date("1999-01-01") : undefined;
+    const endDate = toDate ? new Date(toDate) : startDate ? new Date() : undefined;
+
+
+	// const interval = req.params.interval || "month"
+	
+	const dateFilter = startDate && endDate ? { gte: startDate, lte: endDate } : undefined;
+
 	const vehicleCount = await prismaClient.vehicle.groupBy({
-		by: ["availabilityStatus"],
-		_count: {
-			id: true,
-		},
-	})
+	by: ["availabilityStatus"],
+	where: dateFilter ? { createdAt: dateFilter } : {},
+	_count: { id: true },
+	});
 
 	const bookingStatusCount = await prismaClient.booking.groupBy({
-		by: ["status"],
-		_count: {
-			id: true,
-		},
-	})
+	by: ["status"],
+	where: dateFilter ? { createdAt: dateFilter } : {},
+	_count: { id: true },
+	});
 
 	const bookingPaymentStatusCount = await prismaClient.booking.groupBy({
-		by: ["paymentStatus"],
-		_count: {
-			id: true,
-		},
-	})
+	by: ["paymentStatus"],
+	where: dateFilter ? { createdAt: dateFilter } : {},
+	_count: { id: true },
+	});
+
 	let dateGroupFormat
-	let startDate
 
 	const today = new Date()
+	// Build the raw SQL query dynamically
+		let rawQuery = `
+		SELECT 
+		TO_CHAR("endDate", 'YYYY-MM') AS "formattedEndDate",
+		SUM("totalPrice") AS "totalPrice"
+		FROM "Booking"
+		WHERE "status" = 'COMPLETED'
+		`;
 
-    switch (interval) {
-      case "week":
-        startDate = startOfWeek(today); 
-        dateGroupFormat = "yyyy-ww"; 
-        break;
-      case "month":
-        startDate = startOfMonth(today); 
-        dateGroupFormat = "Month"; 
-        break;
-      case "year":
-        startDate = startOfYear(today); 
-        dateGroupFormat = "yyyy"; 
-        break;
-      default:
-        throw new Error("Invalid interval type");
-    }
+		const queryParams = [];
 
+		if (startDate && endDate) {
+		rawQuery += ` AND "endDate" BETWEEN $1 AND $2`;
+		queryParams.push(startDate, endDate);
+		}
 
-	const result = await prismaClient.$queryRaw`
-	SELECT 
-	  TO_CHAR("endDate", ${dateGroupFormat}) AS "formattedEndDate", -- Format endDate dynamically
-	  SUM("totalPrice") AS "totalPrice"
-	FROM "Booking"
-	WHERE "status" = 'COMPLETED'
-	  AND "endDate" >= ${startDate} -- Filter by start date
-	GROUP BY "formattedEndDate"
-	ORDER BY "formattedEndDate";
-  `;
+		rawQuery += ` GROUP BY "formattedEndDate" ORDER BY "formattedEndDate";`;
+
+		const result = await prismaClient.$queryRawUnsafe(rawQuery, ...queryParams);
 
 	const count = {
 		vehicleCount,
@@ -170,15 +167,15 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 		const createdBookings = []
 		await prismaClient.$transaction(async (prismaClient) => {
 			for (let i = 0; i < bookings.length; ++i) {
-				const { vehicleId, startLocation, endLocation, startDate, endDate } = bookings[i]
+				const { vehicleId, startLocation, endLocation, startDate, endDate,paymentMode } = bookings[i]
 
 				const existingVehicle = await prismaClient.vehicle.findUnique({
 					where: { id: vehicleId },
 				})
 				if (!existingVehicle) throw new Error(`Vehicle not found`)
 
-				if (existingVehicle.availabilityStatus !== "AVAILABLE")
-					throw new Error(`Vehicle is not available`)
+				// if (existingVehicle.availabilityStatus !== "AVAILABLE")
+				// 	throw new Error(`Vehicle is not available`)
 
 				const bookingService = new BookingService(
 					existingVehicle.dailyRate,
@@ -201,6 +198,7 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 						totalPrice: bookingService.calculateTotalPrice(),
 						status: "IN_PROGRESS",
 						deliveryType: bookingService.getDeliveryType(),
+						paymentMode,
 					},
 				})
 				await prismaClient.vehicle.update({

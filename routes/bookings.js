@@ -11,7 +11,7 @@ const { startOfWeek, startOfMonth, startOfYear, format, parseISO } = require("da
 const buildBookingFilter = (query, user) => {
 	const filter = {}
 	if (query.bookerId) filter.bookerId = user.bookerId
-	if (user.role === "BOOKER") filter.bookerId = user.id
+	if (user.role === "BOOKER" && !query.isAll) filter.bookerId = user.id
 	if (query.vehicleId) filter.vehicleId = query.vehicleId
 	if (query.status) filter.status = query.status
 	if (query.paymentStatus) filter.paymentStatus = query.paymentStatus
@@ -174,8 +174,8 @@ router.post("/", [auth, authorizeRoles(["BOOKER", "EMPLOYEE", "ADMIN"])], async 
 				})
 				if (!existingVehicle) throw new Error(`Vehicle not found`)
 
-				if (existingVehicle.availabilityStatus !== "AVAILABLE")
-					throw new Error(`Vehicle is not available`)
+				// if (existingVehicle.availabilityStatus !== "AVAILABLE")
+				// 	throw new Error(`Vehicle is not available`)
 
 				const bookingService = new BookingService(
 					existingVehicle.dailyRate,

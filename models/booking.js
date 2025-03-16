@@ -7,7 +7,8 @@ function getJoiSchema() {
 		endLocation: joi.string().required().label("Ending Location"),
 		startDate: joi.date().iso().required().label("Starting Date"),
 		endDate: joi.date().iso().min(joi.ref("startDate")).required().label("Ending Date"),
-		paymentMode: joi.string().required().label("Payment Mode")
+		paymentMode: joi.string().required().label("Payment Mode"),
+		agreed: joi.bool().required().label("Agreed")
 	})
 }
 
